@@ -1,0 +1,47 @@
+# SSH (Secure Shell, RFC 4253) — banner exchange and binary packet framing
+
+Object<main> SSH
+    abbrev "ssh"
+    col "SSH"
+    seek 4
+    string version until "-"     ["Protocol Version"]
+    string software until "\r\n" ["Software Version"]
+    info "%s %s" version, software
+
+Object SSH_Packet
+    abbrev "ssh.pkt"
+    col "SSH"
+    required uint32 packet_length   ["Packet Length"]
+    required uint8  padding_length  ["Padding Length"]
+    required uint8  msg_type        ["Message Type"]
+        DISCONNECT           = 1
+        IGNORE               = 2
+        UNIMPLEMENTED        = 3
+        DEBUG                = 4
+        SERVICE_REQUEST      = 5
+        SERVICE_ACCEPT       = 6
+        KEXINIT              = 20
+        NEWKEYS              = 21
+        KEXECDH_INIT         = 30
+        KEXECDH_REPLY        = 31
+        USERAUTH_REQUEST     = 50
+        USERAUTH_FAILURE     = 51
+        USERAUTH_SUCCESS     = 52
+        USERAUTH_PK_OK       = 60
+        CHANNEL_OPEN         = 80
+        CHANNEL_OPEN_CONFIRM = 81
+        CHANNEL_OPEN_FAILURE = 82
+        CHANNEL_DATA         = 90
+        CHANNEL_REQUEST      = 96
+        CHANNEL_SUCCESS      = 97
+    payload ["Payload"]
+    info "%s" msg_type
+
+rule tcp.content@0 "SSH-" => SSH
+rule tcp.port == 22       => SSH
+
+color ssh     => black lightyellow
+color ssh.pkt => white darkblue
+
+alias ssh.version  => ssh.version
+alias ssh.software => ssh.software

@@ -1,0 +1,9 @@
+/Users/str/git/hub/libpcapng/bin/protos/ntp.posa
+
+The file decodes the full 48-byte fixed header and routes optional tail bytes through `payload`. Key decisions made from studying the existing corpus:
+
+- Bits syntax follows dns.posa exactly: `bits <src_field> <name> <shift> <width> "Label"` with enum values as `Display Label = numeric_value` (spaces allowed without quoting, confirmed from igmp.posa which uses "Membership Query = 0x11" etc).
+- Stratum enums enumerate 0-15 individually since the range is bounded and the labels differ meaningfully at both ends (Kiss of Death, Primary Reference) and are useful to show in the info line via `%s`.
+- Info line `"v%u %s %s" vn, mode, stratum` produces output like `v4 Server Primary Reference` or `v4 Client Stratum 3` -- version number first since it varies less, then role, then synchronisation quality.
+- Color order is specific-to-general: KoD (white red), primary stratum server (black lightgreen), any server mode 4 (black lightblue), client mode 3 (black lightyellow), catch-all NTP (white darkblue).
+- No content rule: the comment in the header explains why -- valid LI/VN/Mode byte 0 values (0x1b, 0x23, 0x24 are the most common) are not rare enough in UDP traffic to be used as fingerprints safely.

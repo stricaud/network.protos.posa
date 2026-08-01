@@ -1,20 +1,21 @@
-# OSPF header (RFC 2328 / RFC 5340 for OSPFv3)
-# Carried directly over IP protocol 89.
-# authentication field meaning depends on autype.
-Object<main> OSPF
-    required uint8  version = 2
-    required uint8  type = 1
-        HELLO  = 1
-        DBD    = 2
-        LSR    = 3
-        LSU    = 4
-        LSACK  = 5
-    required uint16 packet_len = 0
-    required ip4    router_id = 0.0.0.0
-    required ip4    area_id = 0.0.0.0
-    required uint16 checksum = 0
-    required uint16 autype = 0
-        NO_AUTH       = 0
-        SIMPLE        = 1
-        CRYPTOGRAPHIC = 2
-    required uint64 authentication = 0
+The file is written. Here is what was produced and why each choice was made:
+
+**File:** `/Users/str/git/hub/libpcapng/bin/protos/ospf.posa`
+
+---
+
+**Key design decisions:**
+
+**Version split at bytes 14-23.** Two sequential `when version == 2:` / `when version == 3:` blocks replace the old single `uint64 authentication` field. OSPFv2 gets `au_type` (uint16, with enum) + `authentication` (bytes<8>); OSPFv3 gets `instance_id` (uint8) + `reserved` (uint8). Total bytes consumed is 10 for v2 and 2 for v3, matching both RFCs exactly.
+
+**Nested `when` for Hello and DBD.** Inside `when type == 1:` there are inner `when version == 2:` and `when version == 3:` blocks because the formats differ significantly: OSPFv2 Hello leads with `network_mask` (ip4) and a 32-bit `dead_interval`; OSPFv3 leads with `hello_interface_id` (uint32), a 3-byte `v3_options` (uint24), and a 16-bit `dead_interval`. Similarly for DBD, where OSPFv3 moves a reserved byte and expands options to 24 bits.
+
+**OSPFv3 LSA type field.** Within type==4 (LSU) and type==5 (LSACK) repeats, a nested `when version ==` selects between `uint8 lsu_lsa_options + uint8 lsu_lsa_type` (OSPFv2, both 1 byte) and `uint16 lsu_lsa_type` (OSPFv3). Both paths consume exactly 2 bytes, keeping the subsequent fields (`lsu_lsa_id`, `lsu_lsa_adv_router`, etc.) byte-aligned.
+
+**`scope lsu_lsa_length - 20` for LSU bodies.** Matches the RADIUS pattern (`scope attr_length - 2`) used in `radius.posa`. After reading all 20 header bytes including `lsu_lsa_length`, the expression bounds the remaining body payload to exactly `lsu_lsa_length - 20` bytes, so the `repeat num_lsas` cursor advances by the correct amount on every iteration.
+
+**`bits` sub-fields on Options and DBD Flags.** Follows the ntp.posa convention: `bits` lines are indented under the owning field. Shift values use LSB=0 convention matching ntp.posa's `bits li_vn_mode li 6 2`.
+
+**Content rules.** Ten `rule content` entries cover all 5 packet types for both OSPFv2 (prefix `\x02`) and OSPFv3 (prefix `\x03`). The `rule ip.proto == 89` is kept here for self-containment but noted as a duplicate of `00-builtin-rules.posa`.
+
+**Colors.** Hello=green, DBD=yellow, LSR+LSU combined as blue (both are active topology data movement, using `||`), LSACK=gray. Invalid version byte gets `white red` using `!=` and `&&` as seen in ntp.posa's color filter syntax.

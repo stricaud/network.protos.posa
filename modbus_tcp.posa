@@ -1,26 +1,105 @@
-# Modbus TCP (MBAP header + function code) (Modbus Application Protocol spec)
-# TCP port 502. protocol_id is always 0 for Modbus. unit_id identifies the slave device.
-# Error responses have function_code | 0x80 (e.g. READ_HOLDING_REGISTERS error = 0x83).
+# Modbus TCP (Modbus Application Protocol over TCP, port 502)
+# RFC-style spec: https://modbus.org/docs/Modbus_Application_Protocol_V1_1b3.pdf
+# MBAP header (7 bytes) + Modbus PDU (function_code + data)
+
 Object<main> ModbusTCP
-    required uint16 transaction_id = 0
-    required uint16 protocol_id = 0
-    required uint16 length = 2
-    required uint8  unit_id = 1
-    required uint8  function_code = 3
-        READ_COILS               = 1
-        READ_DISCRETE_INPUTS     = 2
-        READ_HOLDING_REGISTERS   = 3
-        READ_INPUT_REGISTERS     = 4
-        WRITE_SINGLE_COIL        = 5
-        WRITE_SINGLE_REGISTER    = 6
-        READ_EXCEPTION_STATUS    = 7
-        DIAGNOSTICS              = 8
-        WRITE_MULTIPLE_COILS     = 15
-        WRITE_MULTIPLE_REGISTERS = 16
-        REPORT_SERVER_ID         = 17
-        READ_FILE_RECORD         = 20
-        WRITE_FILE_RECORD        = 21
-        MASK_WRITE_REGISTER      = 22
-        READ_WRITE_MULTIPLE      = 23
-        READ_FIFO_QUEUE          = 24
-        MEI_TRANSPORT            = 43
+    abbrev "modbus"
+    col "Modbus/TCP"
+
+    required uint16 transaction_id ["Transaction ID"]
+    required uint16 protocol_id ["Protocol ID"]
+    required uint16 length ["Length"]
+    required uint8  unit_id ["Unit ID"]
+
+    required uint8 function_code ["Function Code"]
+        0x01 = "Read Coils"
+        0x02 = "Read Discrete Inputs"
+        0x03 = "Read Holding Registers"
+        0x04 = "Read Input Registers"
+        0x05 = "Write Single Coil"
+        0x06 = "Write Single Register"
+        0x07 = "Read Exception Status"
+        0x08 = "Diagnostics"
+        0x0F = "Write Multiple Coils"
+        0x10 = "Write Multiple Registers"
+        0x11 = "Report Server ID"
+        0x14 = "Read File Record"
+        0x15 = "Write File Record"
+        0x16 = "Mask Write Register"
+        0x17 = "Read/Write Multiple Registers"
+        0x18 = "Read FIFO Queue"
+        0x2B = "Encapsulated Interface Transport"
+        0x81 = "Read Coils Exception"
+        0x82 = "Read Discrete Inputs Exception"
+        0x83 = "Read Holding Registers Exception"
+        0x84 = "Read Input Registers Exception"
+        0x85 = "Write Single Coil Exception"
+        0x86 = "Write Single Register Exception"
+        0x87 = "Read Exception Status Exception"
+        0x88 = "Diagnostics Exception"
+        0x8F = "Write Multiple Coils Exception"
+        0x90 = "Write Multiple Registers Exception"
+        0x91 = "Report Server ID Exception"
+        0x94 = "Read File Record Exception"
+        0x95 = "Write File Record Exception"
+        0x96 = "Mask Write Register Exception"
+        0x97 = "Read/Write Multiple Registers Exception"
+        0x98 = "Read FIFO Queue Exception"
+        0xAB = "Encapsulated Interface Transport Exception"
+
+    when function_code < 0x80:
+        when function_code == 1:
+            required uint16 starting_address ["Starting Address"]
+            required uint16 quantity ["Quantity of Coils"]
+        when function_code == 2:
+            required uint16 starting_address ["Starting Address"]
+            required uint16 quantity ["Quantity of Inputs"]
+        when function_code == 3:
+            required uint16 starting_address ["Starting Address"]
+            required uint16 quantity ["Quantity of Registers"]
+        when function_code == 4:
+            required uint16 starting_address ["Starting Address"]
+            required uint16 quantity ["Quantity of Registers"]
+        when function_code == 5:
+            required uint16 output_address ["Output Address"]
+            required uint16 output_value ["Output Value"]
+        when function_code == 6:
+            required uint16 register_address ["Register Address"]
+            required uint16 register_value ["Register Value"]
+        when function_code == 15:
+            required uint16 starting_address ["Starting Address"]
+            required uint16 quantity ["Quantity of Coils"]
+            required uint8  byte_count ["Byte Count"]
+            required payload values ["Values"]
+        when function_code == 16:
+            required uint16 starting_address ["Starting Address"]
+            required uint16 quantity ["Quantity of Registers"]
+            required uint8  byte_count ["Byte Count"]
+            required payload values ["Values"]
+        else:
+            required payload data ["Data"]
+    when function_code >= 0x80:
+        required uint8 exception_code ["Exception Code"]
+            1  = "Illegal Function"
+            2  = "Illegal Data Address"
+            3  = "Illegal Data Value"
+            4  = "Server Device Failure"
+            5  = "Acknowledge"
+            6  = "Server Device Busy"
+            10 = "Gateway Path Unavailable"
+            11 = "Gateway Target Device Failed to Respond"
+
+    info "Unit=%u FC=%s Exc=%s" unit_id, function_code, exception_code
+
+rule tcp.content@2 "\x00\x00" => ModbusTCP
+rule tcp.port == 502 => ModbusTCP
+
+color function_code >= 0x80                          => white red
+color function_code == 5 or function_code == 6 or function_code == 15 or function_code == 16 => black lightyellow
+color function_code >= 0x01 and function_code < 0x80 => black lightgreen
+
+alias modbus.func_code      => modbus.function_code
+alias modbus.trans_id       => modbus.transaction_id
+alias modbus.unit_id        => modbus.unit_id
+alias modbus.exception_code => modbus.exception_code
+alias modbus.reference_num  => modbus.starting_address

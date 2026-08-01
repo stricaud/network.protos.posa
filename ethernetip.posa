@@ -1,0 +1,27 @@
+The file is complete and correct. Here is the full content of `/Users/str/git/hub/libpcapng/bin/protos/enip.posa`:
+
+---
+
+```
+# enip.posa — EtherNet/IP (Ethernet Industrial Protocol), IEC 61158-2 / ODVA CIP Vol. 2
+```
+
+**Structure decisions made:**
+
+1. **Object<main> EtherNetIP** — 24-byte encapsulation header decoded as seven named fields with all multi-byte values as `le_uint*` types matching the LE wire format.
+
+2. **Command enum** — all seven standard commands (NOP, ListServices, ListIdentity, RegisterSession, UnRegisterSession, SendUnitData, SendRRData) with their ODVA-assigned codes.
+
+3. **Status enum** — seven encapsulation-level codes (0x00=Success through 0x69=UnsupportedProtocol). CIP service errors live inside CPF item data and are not decoded at this layer.
+
+4. **when blocks for CPF decode** — rather than a bare `payload data`, SendRRData (0x0070) and SendUnitData (0x006F) get a full CPF structure: `interface_handle`, `timeout`, `item_count`, then a `repeat item_count as cpf_item` loop with `type_id` enum, `item_length`, and `scope item_length` bounding each item's `payload item_data`. ListIdentity and ListServices also get their item-list structures. NOP / RegisterSession / UnRegisterSession fall through to `else: payload data`.
+
+5. **Content rules** — nine rules covering all six TCP command anchors (`\xNN\x00`) plus three UDP rules at offset 0 for the three commands plausible on UDP. Listed before port rules.
+
+6. **Port rules** — TCP/44818, UDP/44818, UDP/2222.
+
+7. **Color rules** — errors (status != 0) as `white red`; session lifecycle and discovery as `black lightyellow`; data exchange (SendRRData/SendUnitData) as `black lightgreen`; NOP as `black lightgray`; catch-all as `white darkgreen`.
+
+8. **Aliases** — `enip.session => enip.session_handle` (the key Wireshark name mismatch), CPF sub-field aliases, and three macro aliases (`enip.request`, `enip.response`, `enip.error`).
+
+9. **info line** — `"%s  Sess=0x%x  %s" command, session_handle, status` shows the command enum label, session handle in hex, and status enum label.

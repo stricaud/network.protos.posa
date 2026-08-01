@@ -1,0 +1,74 @@
+# WebSocket protocol decoder — RFC 6455
+# Detects WebSocket frames by their first-byte patterns (FIN + opcode).
+# WebSocket is negotiated via HTTP Upgrade; data frames follow on the same TCP connection.
+# Client-to-server frames are masked (MASK bit set); server-to-client frames are unmasked.
+
+Object<main> WebSocket
+    abbrev "ws"
+    col "WebSocket"
+
+    # Byte 0: FIN flag, reserved bits, and opcode
+    required uint8 flags_opcode "Flags/Opcode"
+    bits flags_opcode fin      7 1 "FIN"
+    bits flags_opcode rsv1     6 1 "RSV1"
+    bits flags_opcode rsv2     5 1 "RSV2"
+    bits flags_opcode rsv3     4 1 "RSV3"
+    bits flags_opcode opcode   0 4 "Opcode"
+        CONTINUATION = 0
+        TEXT         = 1
+        BINARY       = 2
+        CLOSE        = 8
+        PING         = 9
+        PONG         = 10
+
+    # Byte 1: MASK flag and 7-bit base payload length
+    required uint8 mask_len_byte "Mask/Length"
+    bits mask_len_byte mask        7 1 "Mask"
+    bits mask_len_byte payload_len 0 7 "Payload Length"
+
+    # Extended payload length — only present when base payload_len indicates it
+    when payload_len == 126:
+        required uint16 ext_payload_len "Extended Payload Length"
+    when payload_len == 127:
+        required uint64 ext_payload_len_64 "Extended Payload Length (64-bit)"
+
+    # Masking key — 4 bytes, present only when MASK bit is set (client frames)
+    when mask == 1:
+        required bytes<4> masking_key "Masking Key"
+
+    # Payload data (XOR-masked when MASK bit is set)
+    payload
+
+    info "%s len=%u" opcode, payload_len
+
+# ── Content detection (PRIMARY — port-independent) ──────────────────────────
+# Match the most common WebSocket frame first bytes: FIN(1) + opcode
+# 0x81 = FIN + TEXT, 0x82 = FIN + BINARY
+# 0x88 = FIN + CLOSE, 0x89 = FIN + PING, 0x8A = FIN + PONG
+rule tcp.content "\x81" => WebSocket
+rule tcp.content "\x82" => WebSocket
+rule tcp.content "\x88" => WebSocket
+rule tcp.content "\x89" => WebSocket
+rule tcp.content "\x8A" => WebSocket
+
+# ── Port bindings (SECONDARY — standard and common WebSocket ports) ──────────
+rule tcp.port == 80   => WebSocket
+rule tcp.port == 443  => WebSocket
+rule tcp.port == 8080 => WebSocket
+
+# ── Coloring rules ───────────────────────────────────────────────────────────
+# Text frames — green
+color ws.opcode == 1  => black lightgreen
+# Binary frames — blue
+color ws.opcode == 2  => black lightblue
+# Continuation frames — light gray
+color ws.opcode == 0  => black lightgray
+# Control frames (close, ping, pong) — gray
+color ws.opcode == 8  => black lightgray
+color ws.opcode == 9  => black lightgray
+color ws.opcode == 10 => black lightgray
+
+# ── Wireshark-compatible aliases ─────────────────────────────────────────────
+alias websocket.opcode      => ws.opcode
+alias websocket.payload_len => ws.payload_len
+alias websocket.mask        => ws.mask

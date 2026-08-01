@@ -1,0 +1,22 @@
+/Users/str/git/hub/libpcapng/bin/protos/ftp.posa
+
+The file is written. Here is a summary of every structural decision made:
+
+**Three GROUP members instead of two**
+
+FTP commands split into `FTP_COMMAND` (verb + space + argument) and `FTP_COMMAND_BARE` (verb + CRLF, no argument). This avoids the edge case where `string command until " "` consumes the trailing CRLF for bare commands like `PASV\r\n`, which would prevent the enum from matching and pollute the info column.
+
+- `FTP_COMMAND_BARE` uses `starts "PASV\r" "QUIT\r" ...` (CRLF in the prefix discriminates from same-verb with-argument forms of LIST/NLST/STAT/HELP), then `string command until "\r\n"` to get the clean verb.
+- `FTP_COMMAND` uses trailing-space starts prefixes (matching the HTTP/RTSP convention in the codebase) and `string command until " "`.
+
+**Response code as `bytes<3>` + `bytes<1>` separator**
+
+Using `string code until " "` would break on multi-line responses (`220-Hello\r\n`) where the separator is `-` not ` `. Reading exactly 3 bytes for the code and 1 byte for the continuation character handles both `220 ` and `220-` cleanly without branching. The enum values are ASCII string literals (`SERVICE_READY = "220"`) which compare against the byte content.
+
+**`when`/`else` used only for USER**
+
+The spec shows a single `when`/`else` pair, not chained `when` blocks. The USER command gets a named `username` field so analysts can filter on `ftp.username` directly. All other arguments (PASS password, RETR/STOR path, PORT spec) land in the generic `argument` field. The info format `"%s %s%s" command, username, argument` relies on auto-gap-closing so only the field that actually exists appears after the verb.
+
+**Content-based coloring for responses**
+
+Following the RTSP precedent, response code coloring uses `tcp.content "NNN "` rules (digit code + space) rather than field comparisons. This is reliable for single-line replies and avoids ambiguity about how `bytes<3>` compares in color filter expressions. The trailing space also prevents `"550 "` from accidentally matching `"5503"` style content.

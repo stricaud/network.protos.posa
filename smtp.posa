@@ -1,0 +1,165 @@
+# SMTP — Simple Mail Transfer Protocol
+# RFC 5321 (relay, port 25) · RFC 6409 (submission, port 587) · RFC 8314 (implicit TLS, port 465)
+#
+# Wire format is line-oriented ASCII (CRLF-terminated):
+#   Server response (final):        NNN SP  text CRLF
+#   Server response (continuation): NNN "-" text CRLF
+#   Client command (with args):     VERB SP args CRLF
+#   Client command (no args):       VERB CRLF
+#
+# Detection strategy:
+#   Primary   — content rules (protocol visible on any port, including relay chains)
+#   Secondary — port rules    (fallback when first packet is not yet seen)
+
+# ── Main Protocol Object ───────────────────────────────────────────────────────
+
+Object<main> SMTP
+    abbrev "smtp"
+    col "SMTP"
+
+# ── Server Responses ──────────────────────────────────────────────────────────
+# bytes<3> reads exactly three ASCII code digits; bytes<1> captures the
+# separator — SP (final line) or "-" (multi-line continuation).  Both variants
+# are listed in starts so that full multi-line exchanges are captured.
+
+Object<SMTP> RESPONSE
+    abbrev "smtp.response"
+    starts "220 " "220-"
+           "221 " "221-"
+           "235 " "235-"
+           "250 " "250-"
+           "251 " "251-"
+           "334 " "334-"
+           "354 "
+           "421 " "421-"
+           "450 " "450-"
+           "451 " "451-"
+           "452 "
+           "500 " "501 " "502 " "503 " "504 "
+           "535 "
+           "550 " "551 " "552 " "553 " "554 "
+    required bytes<3> code "Code"
+        220 = "Service Ready"
+        221 = "Service Closing Transmission Channel"
+        235 = "Authentication Successful"
+        250 = "Requested Mail Action OK"
+        251 = "User Not Local; Will Forward"
+        334 = "Server AUTH Challenge"
+        354 = "Start Mail Input; End With CRLF.CRLF"
+        421 = "Service Not Available; Closing Transmission Channel"
+        450 = "Mailbox Busy; Try Again Later"
+        451 = "Requested Action Aborted: Local Error in Processing"
+        452 = "Requested Action Not Taken: Insufficient System Storage"
+        500 = "Syntax Error: Command Unrecognized"
+        501 = "Syntax Error in Parameters or Arguments"
+        502 = "Command Not Implemented"
+        503 = "Bad Sequence of Commands"
+        504 = "Command Parameter Not Implemented"
+        535 = "Authentication Credentials Invalid"
+        550 = "Requested Action Not Taken: Mailbox Unavailable"
+        551 = "User Not Local; Please Try Forwarding"
+        552 = "Requested Mail Action Aborted: Exceeded Storage Allocation"
+        553 = "Requested Action Not Taken: Mailbox Name Not Allowed"
+        554 = "Transaction Failed; No SMTP Service Here"
+    required bytes<1> separator "Sep"
+    required string message until "\r\n" "Message"
+    info "%s %s" code, message
+
+# ── Client Commands ────────────────────────────────────────────────────────────
+# string verb until " " stops at the first space.  For no-argument commands
+# (DATA, QUIT, RSET, NOOP, STARTTLS) there is no space — the parser reaches
+# CRLF and the args field is absent; info collapses the gap automatically.
+
+Object<SMTP> COMMAND
+    abbrev "smtp.command"
+    starts "EHLO " "HELO "
+           "MAIL " "RCPT "
+           "DATA\r" "QUIT\r" "RSET\r"
+           "VRFY " "EXPN "
+           "NOOP\r" "NOOP "
+           "AUTH "
+           "STARTTLS\r"
+    required string verb until " " "Command"
+        EHLO     = "Extended Hello (ESMTP Negotiation)"
+        HELO     = "Hello (Basic SMTP)"
+        MAIL     = "Mail (Begin Transfer)"
+        RCPT     = "Recipient"
+        DATA     = "Data (Begin Message Body)"
+        QUIT     = "Quit"
+        RSET     = "Reset (Abort Transaction)"
+        VRFY     = "Verify Address"
+        EXPN     = "Expand Mailing List"
+        NOOP     = "No Operation"
+        AUTH     = "Authenticate (SASL)"
+        STARTTLS = "Start TLS Negotiation"
+    string args until "\r\n" "Arguments"
+    info "%s %s" verb, args
+
+# ── Content Detection Rules (primary) ─────────────────────────────────────────
+# Ordered by specificity; server greeting and envelope commands are the most
+# unambiguous signals.  Port rules below serve only as secondary hints.
+
+rule tcp.content "220 "       => SMTP
+rule tcp.content "EHLO "      => SMTP
+rule tcp.content "HELO "      => SMTP
+rule tcp.content "MAIL FROM:" => SMTP
+rule tcp.content "RCPT TO:"   => SMTP
+rule tcp.content "250 OK"     => SMTP
+rule tcp.content "354 "       => SMTP
+
+# ── Port Binding Rules (secondary) ────────────────────────────────────────────
+
+rule tcp.port == 25  => SMTP
+rule tcp.port == 587 => SMTP
+rule tcp.port == 465 => SMTP
+
+# ── Coloring Rules ────────────────────────────────────────────────────────────
+# Most-specific first.  Security events (auth failure, permanent error) take
+# priority over category bands; AUTH exchange uses orange throughout so the
+# full challenge/response pair is visible as a unit.
+
+# AUTH failure — red (security event, higher priority than generic 5xx band)
+color smtp.response.code == "535" => white red
+
+# Permanent failures 5xx — red
+color smtp.response.code == "500" or smtp.response.code == "501" or smtp.response.code == "502" or smtp.response.code == "503" or smtp.response.code == "504" => white red
+color smtp.response.code == "550" or smtp.response.code == "551" or smtp.response.code == "552" or smtp.response.code == "553" or smtp.response.code == "554" => white red
+
+# Temporary failures 4xx — yellow/amber
+color smtp.response.code == "421" or smtp.response.code == "450" or smtp.response.code == "451" or smtp.response.code == "452" => black lightyellow
+
+# AUTH exchange — orange (server challenge and client AUTH command paired)
+color smtp.response.code == "334" => black orange
+color smtp.command.verb == "AUTH" => black orange
+
+# STARTTLS — dark blue (encryption transition)
+color smtp.command.verb == "STARTTLS" => white darkblue
+
+# DATA boundary — cyan (marks envelope-to-body transition)
+color smtp.response.code == "354" => black lightcyan
+
+# Success responses 2xx — green
+color smtp.response.code == "220" or smtp.response.code == "221" or smtp.response.code == "235" or smtp.response.code == "250" or smtp.response.code == "251" => black lightgreen
+
+# Client commands (general) — light yellow
+color smtp.command => black lightyellow
+
+# Catch-all for any SMTP traffic not matched above
+color smtp => white darkgray
+
+# ── Wireshark Compatibility Aliases ───────────────────────────────────────────
+# Maps Wireshark smtp dissector field names to POSA equivalents so that
+# existing display filters and column expressions continue to work.
+
+alias smtp.code               => smtp.response.code
+alias smtp.response.parameter => smtp.response.message
+
+alias smtp.req.command        => smtp.command.verb
+alias smtp.req.parameter      => smtp.command.args
+
+# Envelope address convenience aliases.
+# args holds the raw parameter string ("FROM:<addr>" or "TO:<addr>"); these
+# aliases let analysts write smtp.sender or smtp.recipient in filters without
+# knowing the internal field path.
+alias smtp.sender    => smtp.command.args
+alias smtp.recipient => smtp.command.args

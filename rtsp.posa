@@ -1,0 +1,15 @@
+The file is at `/Users/str/git/hub/libpcapng/bin/protos/rtsp.posa`.
+
+Key design decisions made by studying the existing HTTP decoder:
+
+**Group dispatch mechanism** — RTSP_RESPONSE uses `required uint32 magic = 0x52545350 hex "Magic"` (the ASCII bytes for "RTSP") followed by `seek 0` to rewind, mirroring exactly how HTTP_RESPONSE uses `0x48545450` for "HTTP". This is how the Object<RTSP> group selects between members.
+
+**Header parsing** — each header is one raw `string line until "\r\n"` rather than splitting name from value. The HTTP decoder does this too; it keeps the parser simple and avoids any ambiguity around the `:` separator or folded headers.
+
+**Blank-line sentinel** — `required string blank until "\r\n" "End of headers"` explicitly consumes the empty CRLF that terminates the header section, preventing the parser from walking into the body.
+
+**Content rules** — `OPTIONS *` is added alongside `OPTIONS rtsp://` because RFC 2326 allows `*` as the request-URI for server-wide OPTIONS, which is the one case where the URI is not an rtsp:// absolute reference.
+
+**Starts prefixes** — the `starts` list uses `"METHOD "` (method + space) not `"METHOD rtsp://"` for the group-member selector; the content rules at the bottom already guarantee the packet belongs to RTSP before the group dispatch runs, so the starts only need to distinguish request from response within the group.
+
+**Color rules** — use `tcp.content "RTSP/1.0 N"` to target the first digit of the three-digit status code (2xx green, 3xx yellow, 4xx/5xx red) without needing numeric comparison on the string field.

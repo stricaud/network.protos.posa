@@ -1,0 +1,49 @@
+# zabbix.posa — Zabbix Monitoring Protocol
+#
+# Zabbix uses a custom binary TCP protocol between agents, proxies, and the
+# server. The framing header is 13 bytes:
+#
+#   char[4]  magic    — "ZBXD" (0x5A425844)
+#   uint8    flags    — protocol flags:
+#                        0x01 = ZABBIX_PROTOCOL (standard)
+#                        0x04 = COMPRESSION
+#                        0x08 = RESERVED
+#   uint32   data_length   — uncompressed payload size (LE)
+#   uint32   reserved      — compressed size or 0
+#
+# The payload is a JSON object. Common payload types (identified by the "request"
+# or "response" JSON key) include:
+#   agent data, active checks, config sync, host list, etc.
+#
+# Active agent (port 10050): server → agent connections for passive checks.
+# Passive agent (port 10051): agent → server connections for active checks.
+#
+# Reference: https://www.zabbix.com/documentation/current/en/manual/appendix/protocols
+# Default TCP ports: 10050 (Zabbix agent), 10051 (Zabbix trapper/server)
+
+Object<main> ZABBIX
+    abbrev "zabbix"
+    col "Zabbix"
+    starts "ZBXD"
+
+    str<4>  magic           "Magic"
+    uint8   flags           hex "Flags"
+        0x01 = "Standard Protocol"
+        0x04 = "Compressed"
+        0x05 = "Compressed Protocol"
+    le_uint32 data_length   "Data Length"
+    le_uint32 reserved      "Reserved / Compressed Size"
+    payload payload         "JSON Payload"
+
+    info "Zabbix flags=0x%02x len=%u" flags, data_length
+
+rule tcp.port == 10050 => ZABBIX
+rule tcp.port == 10051 => ZABBIX
+
+rule tcp.content "ZBXD" => ZABBIX
+
+color zabbix.flags == 0x04 || zabbix.flags == 0x05 => black lightyellow
+color zabbix => white darkblue
+
+alias zabbix.agent  => tcp.dstport == 10050
+alias zabbix.server => tcp.dstport == 10051

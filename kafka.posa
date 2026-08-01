@@ -1,0 +1,118 @@
+# kafka.posa — Apache Kafka Wire Protocol
+#
+# Kafka's binary protocol is length-prefixed and big-endian throughout.
+# Every request begins with a 4-byte frame length (not counting these 4 bytes
+# themselves), followed by the request header: api_key, api_version,
+# correlation_id, and a client_id (uint16 length-prefixed string).
+#
+# Responses share the same framing (4-byte length + 4-byte correlation_id)
+# but have no api_key — they're matched to the request by correlation_id.
+#
+# Reference: https://kafka.apache.org/protocol
+#
+# Runs on TCP port 9092 (default plaintext), 9093 (TLS).
+
+Lookup KafkaApiKeys
+    0  = "Produce"
+    1  = "Fetch"
+    2  = "ListOffsets"
+    3  = "Metadata"
+    4  = "LeaderAndIsr"
+    5  = "StopReplica"
+    6  = "UpdateMetadata"
+    7  = "ControlledShutdown"
+    8  = "OffsetCommit"
+    9  = "OffsetFetch"
+    10 = "FindCoordinator"
+    11 = "JoinGroup"
+    12 = "Heartbeat"
+    13 = "LeaveGroup"
+    14 = "SyncGroup"
+    15 = "DescribeGroups"
+    16 = "ListGroups"
+    17 = "SaslHandshake"
+    18 = "ApiVersions"
+    19 = "CreateTopics"
+    20 = "DeleteTopics"
+    21 = "DeleteRecords"
+    22 = "InitProducerId"
+    23 = "OffsetForLeaderEpoch"
+    24 = "AddPartitionsToTxn"
+    25 = "AddOffsetsToTxn"
+    26 = "EndTxn"
+    27 = "WriteTxnMarkers"
+    28 = "TxnOffsetCommit"
+    29 = "DescribeAcls"
+    30 = "CreateAcls"
+    31 = "DeleteAcls"
+    32 = "DescribeConfigs"
+    33 = "AlterConfigs"
+    34 = "AlterReplicaLogDirs"
+    35 = "DescribeLogDirs"
+    36 = "SaslAuthenticate"
+    37 = "CreatePartitions"
+    38 = "CreateDelegationToken"
+    39 = "RenewDelegationToken"
+    40 = "ExpireDelegationToken"
+    41 = "DescribeDelegationToken"
+    42 = "DeleteGroups"
+    43 = "ElectLeaders"
+    44 = "IncrementalAlterConfigs"
+    45 = "AlterPartitionReassignments"
+    46 = "ListPartitionReassignments"
+    47 = "OffsetDelete"
+    48 = "DescribeClientQuotas"
+    49 = "AlterClientQuotas"
+    50 = "DescribeUserScramCredentials"
+    51 = "AlterUserScramCredentials"
+    56 = "AlterPartition"
+    57 = "UpdateFeatures"
+    60 = "DescribeCluster"
+    61 = "DescribeProducers"
+    65 = "DescribeTransactions"
+    66 = "ListTransactions"
+    67 = "AllocateProducerIds"
+    68 = "ConsumerGroupHeartbeat"
+    69 = "ConsumerGroupDescribe"
+    71 = "GetTelemetrySubscriptions"
+    72 = "PushTelemetry"
+    74 = "ListClientMetrics"
+
+Object<KAFKA> KAFKA_REQUEST
+    abbrev "kafka"
+    col "Kafka"
+
+    uint32 message_length "Frame Length"
+    uint16 api_key lookup KafkaApiKeys "API Key"
+    uint16 api_version "API Version"
+    uint32 correlation_id "Correlation ID"
+    uint16 client_id_length "Client ID Length"
+    str[client_id_length] client_id "Client ID"
+
+    payload body "Request Body"
+
+    info "%s v%u corr=%u" api_key, api_version, correlation_id
+
+Object<KAFKA> KAFKA_RESPONSE
+    abbrev "kafka"
+    col "Kafka"
+
+    uint32 message_length "Frame Length"
+    uint32 correlation_id "Correlation ID"
+
+    payload body "Response Body"
+
+    info "Response corr=%u" correlation_id
+
+Object<GROUP> KAFKA
+
+rule tcp.port == 9092 => KAFKA
+rule tcp.port == 9093 => KAFKA
+
+color kafka.api_key == 0  => black lightyellow
+color kafka.api_key == 1  => black lightgreen
+color kafka.api_key == 18 => black lightgray
+color kafka => white darkblue
+
+alias kafka.request.api  => kafka.api_key
+alias kafka.request.corr => kafka.correlation_id

@@ -1,0 +1,44 @@
+# mongodb.posa — MongoDB Wire Protocol
+#
+# Every MongoDB message has a 16-byte little-endian header followed by an
+# operation-specific body. The opCode field identifies the message type;
+# OP_MSG (2013) is the modern unified opcode used by MongoDB 3.6+. Legacy
+# opcodes (OP_QUERY, OP_REPLY, …) are still seen in older drivers.
+#
+# Reference: https://www.mongodb.com/docs/manual/reference/mongodb-wire-protocol/
+#
+# Runs on TCP port 27017 (default).
+
+Object<main> MONGODB
+    abbrev "mongodb"
+    col "MongoDB"
+
+    le_uint32 message_length "Message Length"
+    le_uint32 request_id    "Request ID"
+    le_uint32 response_to   "Response To"
+    le_uint32 op_code       "Op Code"
+        1    = "OP_REPLY (deprecated)"
+        2001 = "OP_UPDATE (deprecated)"
+        2002 = "OP_INSERT (deprecated)"
+        2004 = "OP_QUERY (deprecated)"
+        2005 = "OP_GET_MORE (deprecated)"
+        2006 = "OP_DELETE (deprecated)"
+        2007 = "OP_KILL_CURSORS (deprecated)"
+        2010 = "OP_COMMAND (deprecated)"
+        2011 = "OP_COMMANDREPLY (deprecated)"
+        2012 = "OP_COMPRESSED"
+        2013 = "OP_MSG"
+
+    payload body "Body"
+
+    info "op=%u reqid=%u" op_code, request_id
+
+rule tcp.port == 27017 => MONGODB
+rule tcp.port == 27018 => MONGODB
+rule tcp.port == 27019 => MONGODB
+
+color mongodb.op_code == 2013 => black lightblue
+color mongodb.op_code == 1    => black lightgreen
+color mongodb => white darkblue
+
+alias mongodb.opcode => mongodb.op_code

@@ -1,0 +1,99 @@
+# rtmp.posa — Real-Time Messaging Protocol (Adobe RTMP)
+#
+# RTMP runs over TCP and opens with a three-way handshake:
+#
+#   C0/S0  1 byte   — version byte, must be 0x03 (0x06 for RTMPE)
+#   C1/S1  1536 bytes — uint32_be timestamp + uint32_be zeros + 1528 random bytes
+#   C2/S2  1536 bytes — echo of the peer's C1/S1
+#
+# After the handshake both sides exchange RTMP chunks. Each chunk has:
+#
+#   Basic Header  1-3 bytes:
+#     bits 7-6: fmt  (0=full, 1=delta+type, 2=timestamp-delta only, 3=identical)
+#     bits 5-0: cs_id (chunk stream ID; 0 and 1 add 1 or 2 extension bytes)
+#
+#   Message Header (fmt=0, 11 bytes):
+#     uint24_be timestamp + uint24_be msg_length + uint8 msg_type_id
+#     + uint32_le msg_stream_id
+#
+#   Message Header (fmt=1, 7 bytes): timestamp_delta + msg_length + msg_type_id
+#   Message Header (fmt=2, 3 bytes): timestamp_delta only
+#   Message Header (fmt=3, 0 bytes): identical to previous chunk on this cs_id
+#
+# If any timestamp field is 0xFFFFFF an extended 4-byte timestamp follows.
+#
+# Reference: https://rtmp.veriskope.com/docs/spec/  (Adobe RTMP specification)
+#
+# Runs on TCP port 1935. RTMPS (TLS-wrapped) uses TCP port 443.
+
+Object<RTMP> RTMP_HANDSHAKE
+    abbrev "rtmp"
+    col "RTMP"
+    starts "\x03"
+
+    uint8    version   "Version"
+        3 = "RTMP"
+        6 = "RTMPE (encrypted)"
+    uint32   timestamp "C1 Timestamp"
+    uint32   zeros     "C1 Zeros"
+    payload  random    "C1 Random Data"
+
+    info "RTMP handshake version=%u" version
+
+Object<RTMP> RTMP_CHUNK
+    abbrev "rtmp"
+    col "RTMP"
+
+    uint8 basic_header hex "Basic Header"
+    bits basic_header fmt 6 2 "Format"
+        0 = "Type 0 — New stream"
+        1 = "Type 1 — Same stream, new type"
+        2 = "Type 2 — Same stream and type"
+        3 = "Type 3 — Identical to previous"
+    bits basic_header cs_id 0 6 "Chunk Stream ID"
+        2 = "RTMP Control"
+        3 = "AMF Command"
+        4 = "User Control"
+        5 = "Video"
+        6 = "Audio"
+
+    when fmt == 0:
+        uint24 timestamp   "Timestamp"
+        uint24 msg_length  "Message Length"
+        uint8  msg_type_id "Message Type"
+            1  = "Set Chunk Size"
+            2  = "Abort"
+            3  = "Acknowledgement"
+            4  = "User Control"
+            5  = "Window Acknowledgement Size"
+            6  = "Set Peer Bandwidth"
+            8  = "Audio Data"
+            9  = "Video Data"
+            15 = "AMF3 Data"
+            16 = "AMF3 Shared Object"
+            17 = "AMF3 Command"
+            18 = "AMF0 Data"
+            19 = "AMF0 Shared Object"
+            20 = "AMF0 Command"
+            22 = "Aggregate"
+        le_uint32 msg_stream_id "Message Stream ID"
+        payload chunk_data "Chunk Data"
+    else:
+        payload rest "Chunk Data"
+
+    info "RTMP fmt=%u cs_id=%u type=%u" fmt, cs_id, msg_type_id
+
+Object<GROUP> RTMP
+
+rule tcp.port == 1935 => RTMP
+rule tcp.content "\x03\x00\x00\x00\x00\x00\x00\x00" => RTMP
+
+color rtmp.msg_type_id == 9  => black lightblue
+color rtmp.msg_type_id == 8  => black lightgreen
+color rtmp.msg_type_id == 20 || rtmp.msg_type_id == 17 => black lightyellow
+color rtmp.msg_type_id == 1  => black lightgray
+color rtmp => white darkblue
+
+alias rtmp.audio     => rtmp.msg_type_id == 8
+alias rtmp.video     => rtmp.msg_type_id == 9
+alias rtmp.command   => rtmp.msg_type_id == 20 || rtmp.msg_type_id == 17

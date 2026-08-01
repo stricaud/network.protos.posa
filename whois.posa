@@ -1,0 +1,41 @@
+# whois.posa — WHOIS Protocol (RFC 3912)
+#
+# WHOIS is a simple request/response TCP protocol. The client sends a single
+# line query (domain name or IP address or ASN) terminated by CRLF. The server
+# responds with free-form text and closes the connection.
+#
+# There is no structured binary header — the entire exchange is plain text.
+# RDAP (RFC 7482) is the JSON-based successor, served over HTTPS; it is not
+# decodable here without HTTP dissection.
+#
+# Reference: RFC 3912 (WHOIS), RFC 7482 (RDAP)
+# Default TCP port: 43
+
+Object<WHOIS> WHOIS_REQUEST
+    abbrev "whois"
+    col "WHOIS"
+    starts "domain " "Domain " "nic " "AS" "ARIN " "RIPE " "-T "
+
+    string query until "\r\n" "Query"
+    payload rest "Data"
+
+    info "WHOIS query: %s" query
+
+Object<WHOIS> WHOIS_RESPONSE
+    abbrev "whois"
+    col "WHOIS"
+    starts "%" "#" "Domain Name" "domain" "inetnum" "NetRange" "route"
+           "OrgName" "OrgID" "NetName" "CIDR" "NetHandle" "aut-num"
+           "descr" "person" "role" "organisation" "mnt-by" "Registrar"
+           "Registry Domain ID" "Registrant"
+
+    string first_line until "\r\n" "First Line"
+    payload body "Response Body"
+
+    info "WHOIS response"
+
+Object<GROUP> WHOIS
+
+rule tcp.port == 43 => WHOIS
+
+color whois => white darkblue

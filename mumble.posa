@@ -1,0 +1,75 @@
+# mumble.posa — Mumble Voice Protocol (Murmur TCP control channel)
+#
+# Mumble uses TCP for control messages and (optionally) UDP for voice.
+# The TCP control channel frames every message with a 6-byte header:
+#
+#   uint16_be type    — message type (see enum below)
+#   uint32_be length  — length of the protobuf payload
+#   bytes[length]     — protobuf-encoded message body
+#
+# UDP voice packets are encrypted (OCB-AES128) so only the TCP control
+# channel is decodable here.
+#
+# The connection opens with the client sending a Version message (type 0),
+# then Authenticate (type 2). The server replies with CryptSetup (type 15),
+# CodecVersion (type 21), ChannelState (type 7), UserState (type 9), and
+# ServerSync (type 5) to complete the session setup.
+#
+# Reference: https://mumble-protocol.readthedocs.io/
+#            https://github.com/mumble-voip/mumble/blob/master/src/Mumble.proto
+#
+# Runs on TCP port 64738 (default).
+
+Object<main> MUMBLE
+    abbrev "mumble"
+    col "Mumble"
+
+    uint16 type "Message Type"
+        0  = "Version"
+        1  = "UDPTunnel"
+        2  = "Authenticate"
+        3  = "Ping"
+        4  = "Reject"
+        5  = "ServerSync"
+        6  = "ChannelRemove"
+        7  = "ChannelState"
+        8  = "UserRemove"
+        9  = "UserState"
+        10 = "BanList"
+        11 = "TextMessage"
+        12 = "PermissionDenied"
+        13 = "ACL"
+        14 = "QueryUsers"
+        15 = "CryptSetup"
+        16 = "ContextActionModify"
+        17 = "ContextAction"
+        18 = "UserList"
+        19 = "VoiceTarget"
+        20 = "PermissionQuery"
+        21 = "CodecVersion"
+        22 = "UserStats"
+        23 = "RequestBlob"
+        24 = "ServerConfig"
+        25 = "SuggestConfig"
+
+    uint32 length "Payload Length"
+    bytes[length] body "Protobuf Body"
+
+    info "%s len=%u" type, length
+
+rule tcp.port == 64738 => MUMBLE
+
+# The version handshake starts with uint16=0 (Version) then uint32 length then
+# the protobuf; the first 2 bytes are always \x00\x00 for the very first message.
+rule tcp.content "\x00\x00" => MUMBLE
+
+color mumble.type == 11 => black lightgreen
+color mumble.type == 2  => black lightyellow
+color mumble.type == 5  => black lightblue
+color mumble.type == 4  => white red
+color mumble.type == 3  => black lightgray
+color mumble.type == 1  => black lightblue
+color mumble => white darkblue
+
+alias mumble.msg_type  => mumble.type
+alias mumble.msg_size  => mumble.length

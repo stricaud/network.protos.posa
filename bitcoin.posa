@@ -1,0 +1,74 @@
+# bitcoin.posa — Bitcoin P2P network protocol
+#
+# Every Bitcoin message begins with a 24-byte header: a 4-byte network magic
+# (identifies mainnet vs testnet), a 12-byte null-padded ASCII command name,
+# a 4-byte little-endian payload length, and a 4-byte checksum (first 4 bytes
+# of SHA256(SHA256(payload))).  The payload follows immediately.
+#
+# Reference: https://developer.bitcoin.org/reference/p2p_networking.html
+#
+# Runs on TCP port 8333 (mainnet), 18333 (testnet), 18444 (regtest).
+
+Lookup BitcoinCommands
+    "version"    = "Version Handshake"
+    "verack"     = "Version Acknowledge"
+    "addr"       = "Address Advertisement"
+    "inv"        = "Inventory"
+    "getdata"    = "Get Data"
+    "notfound"   = "Not Found"
+    "getblocks"  = "Get Blocks"
+    "getheaders" = "Get Headers"
+    "tx"         = "Transaction"
+    "block"      = "Block"
+    "headers"    = "Block Headers"
+    "getaddr"    = "Get Addresses"
+    "mempool"    = "Mempool Request"
+    "ping"       = "Ping"
+    "pong"       = "Pong"
+    "reject"     = "Reject"
+    "filterload" = "Bloom Filter Load"
+    "filteradd"  = "Bloom Filter Add"
+    "filterclear" = "Bloom Filter Clear"
+    "merkleblock" = "Merkle Block"
+    "sendheaders" = "Send Headers (BIP130)"
+    "feefilter"  = "Fee Filter (BIP133)"
+    "sendcmpct"  = "Send Compact (BIP152)"
+    "cmpctblock" = "Compact Block (BIP152)"
+    "getblocktxn" = "Get Block Transactions"
+    "blocktxn"   = "Block Transactions"
+
+Object<main> BITCOIN
+    abbrev "bitcoin"
+    col "Bitcoin"
+
+    uint32 magic hex "Network Magic"
+        0xF9BEB4D9 = "Mainnet"
+        0xFABFB5DA = "Testnet"
+        0x0B110907 = "Testnet3"
+        0x0A03CF40 = "Signet"
+        0xF9BEB4FE = "Namecoin"
+
+    str<12> command lookup BitcoinCommands "Command"
+
+    le_uint32 payload_length "Payload Length"
+    uint32 checksum hex "Checksum"
+
+    bytes[payload_length] payload "Payload"
+
+    info "%s magic=0x%08x len=%u" command, magic, payload_length
+
+rule tcp.port == 8333  => BITCOIN
+rule tcp.port == 18333 => BITCOIN
+rule tcp.port == 18444 => BITCOIN
+
+rule tcp.content "\xf9\xbe\xb4\xd9" => BITCOIN
+rule tcp.content "\xfa\xbf\xb5\xda" => BITCOIN
+rule tcp.content "\x0b\x11\x09\x07" => BITCOIN
+
+color bitcoin.command == "tx"    => black lightgreen
+color bitcoin.command == "block" => black lightblue
+color bitcoin.magic == 0xF9BEB4D9 => white darkblue
+color bitcoin => white darkblue
+
+alias bitcoin.network => bitcoin.magic
+alias bitcoin.cmd     => bitcoin.command

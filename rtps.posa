@@ -1,0 +1,88 @@
+# rtps.posa — Real-Time Publish Subscribe Protocol (DDS / RTPS 2.x)
+#
+# RTPS (Real-Time Publish Subscribe) is the wire protocol for DDS (Data
+# Distribution Service), used extensively in robotics (ROS 2), simulation,
+# and distributed real-time systems.
+#
+# Every RTPS message starts with a 20-byte header:
+#
+#   char[4]  magic         — "RTPS" (0x52545053)
+#   uint8    protocol_ver_major
+#   uint8    protocol_ver_minor
+#   uint8    vendor_id[2]  — vendor identifier (e.g. 0x0101 = eProsima)
+#   uint8    guid_prefix[12] — GUID prefix of the message sender
+#
+# Followed by one or more SubMessages, each with a 4-byte subheader:
+#
+#   uint8    submsg_id     — submessage type
+#   uint8    flags         — flags byte; bit 0 = Endianness flag (E: 0=BE, 1=LE)
+#   uint16   submsg_length — octets from the END of this header to end of submessage
+#
+# Standard ports: 7400-7401 UDP (multicast discovery), 7410+ (unicast)
+#
+# Reference: OMG DDS-RTPS 2.3 specification (formal/2019-04-03)
+
+Lookup RtpsSubmessageTypes
+    0x01 = "PAD"
+    0x06 = "ACKNACK"
+    0x07 = "HEARTBEAT"
+    0x08 = "GAP"
+    0x09 = "INFO_TS"
+    0x0B = "INFO_SRC"
+    0x0C = "INFO_REPLY_IP4"
+    0x0D = "INFO_DST"
+    0x0E = "INFO_REPLY"
+    0x12 = "NACK_FRAG"
+    0x13 = "HEARTBEAT_FRAG"
+    0x15 = "DATA"
+    0x16 = "DATA_FRAG"
+
+Object<main> RTPS
+    abbrev "rtps"
+    col "RTPS"
+    starts "RTPS"
+
+    str<4>  magic           "Magic"
+    uint8   version_major   "Protocol Version (major)"
+    uint8   version_minor   "Protocol Version (minor)"
+    uint8   vendor_id_major hex "Vendor ID (major)"
+        0x01 = "OMG"
+    uint8   vendor_id_minor hex "Vendor ID (minor)"
+        0x01 = "eProsima FastRTPS"
+        0x02 = "RTI Connext DDS"
+        0x03 = "OpenSplice DDS"
+        0x04 = "OpenDDS"
+        0x05 = "MilSoft"
+        0x06 = "Gallium Visual Systems"
+        0x07 = "TOC-CDF"
+        0x08 = "Marti Software"
+        0x09 = "PRISMTECH"
+        0x0A = "TWIN OAKS COMPUTING"
+        0x0B = "Lakota Technical Solutions"
+        0x0C = "ICOUP Consulting"
+        0x0D = "ETRI Electronics"
+        0x0E = "Real-Time Innovations"
+        0x10 = "PrismTech"
+    bytes<12> guid_prefix   "GUID Prefix"
+
+    # First submessage header (more may follow but are in the payload)
+    uint8   submsg_id       lookup RtpsSubmessageTypes "Submessage ID"
+    uint8   submsg_flags    hex "Flags"
+    uint16  submsg_length   "Submessage Length"
+    payload submsg_body     "Submessage Body + Remaining"
+
+    info "RTPS v%u.%u %s len=%u" version_major, version_minor, submsg_id, submsg_length
+
+rule udp.port == 7400 => RTPS
+rule udp.port == 7401 => RTPS
+
+rule udp.content "RTPS" => RTPS
+
+color rtps.submsg_id == 0x15 || rtps.submsg_id == 0x16 => black lightblue
+color rtps.submsg_id == 0x07 || rtps.submsg_id == 0x06 => black lightgreen
+color rtps.submsg_id == 0x09 => black lightgray
+color rtps => white darkblue
+
+alias dds.magic       => rtps.magic
+alias dds.version     => rtps.version_major
+alias dds.guid_prefix => rtps.guid_prefix

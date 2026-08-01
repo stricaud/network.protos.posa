@@ -1,0 +1,115 @@
+# nat_pmp.posa — NAT Port Mapping Protocol (NAT-PMP / PCP)
+#
+# NAT-PMP (RFC 6886) allows a host behind NAT to learn its external IP and
+# request port mappings. Superseded by PCP (Port Control Protocol, RFC 6887)
+# which shares the same UDP port.
+#
+# NAT-PMP (RFC 6886):
+#   Client sends on UDP 5351:
+#     uint8  version   — 0
+#     uint8  opcode    — 0=external addr, 1=map UDP, 2=map TCP
+#     uint16 reserved  — 0
+#     uint16 int_port  — internal port (map requests)
+#     uint16 ext_port  — suggested external port
+#     uint32 lifetime  — seconds (0=delete)
+#
+#   Server response: version=0, opcode = 128+request_opcode, result_code
+#
+# PCP (RFC 6887) uses version=2 with a 24-byte common header:
+#     uint8  version   — 2
+#     uint8  r_opcode  — bit 7: response flag; bits 6-0: opcode
+#     uint16 reserved
+#     uint32 lifetime
+#     uint8[16] client_ip
+#
+# Default UDP port: 5351 (NAT-PMP and PCP share the same port)
+
+Object<NAT_PMP> NAT_PMP_REQUEST
+    abbrev "nat_pmp"
+    col "NAT-PMP"
+
+    uint8  version   "Version"
+        0 = "NAT-PMP v0"
+    uint8  opcode    "Opcode"
+        0 = "External Address"
+        1 = "Map UDP"
+        2 = "Map TCP"
+    uint16 reserved  "Reserved"
+    when opcode != 0:
+        uint16 int_port  "Internal Port"
+        uint16 ext_port  "External Port"
+        uint32 lifetime  "Lifetime (seconds)"
+    else:
+        payload rest "Data"
+
+    info "NAT-PMP req op=%u" opcode
+
+Object<NAT_PMP> NAT_PMP_RESPONSE
+    abbrev "nat_pmp"
+    col "NAT-PMP"
+
+    uint8  version   "Version"
+        0 = "NAT-PMP v0"
+    uint8  opcode    "Opcode"
+        128 = "External Address Response"
+        129 = "Map UDP Response"
+        130 = "Map TCP Response"
+    uint16 result_code "Result Code"
+        0 = "Success"
+        1 = "Unsupported Version"
+        2 = "Not Authorized"
+        3 = "Network Failure"
+        4 = "Out of Resources"
+        5 = "Unsupported Opcode"
+    uint32 seconds_since_epoch "Epoch Time"
+    when opcode == 128:
+        ip4 ext_addr "External Address"
+    else:
+        uint16 int_port  "Internal Port"
+        uint16 ext_port  "External Port"
+        uint32 lifetime  "Lifetime (seconds)"
+
+    info "NAT-PMP resp op=%u result=%u" opcode, result_code
+
+Object<NAT_PMP> PCP_REQUEST
+    abbrev "nat_pmp"
+    col "PCP"
+
+    uint8  version   "Version"
+        2 = "PCP v2"
+    uint8  r_opcode  hex "R/Opcode"
+        0x00 = "Announce"
+        0x01 = "Map"
+        0x02 = "Peer"
+    uint16 reserved  "Reserved"
+    uint32 lifetime  "Requested Lifetime"
+    bytes<16> client_ip "Client IP Address"
+    payload pcp_options "PCP Options"
+
+    info "PCP req op=%u" r_opcode
+
+Object<GROUP> NAT_PMP
+
+rule udp.port == 5351 => NAT_PMP
+
+# NAT-PMP request starts with version=0
+rule udp.content "\x00\x00\x00\x00" => NAT_PMP
+rule udp.content "\x00\x01\x00\x00" => NAT_PMP
+rule udp.content "\x00\x02\x00\x00" => NAT_PMP
+# NAT-PMP response (opcode 128-130)
+rule udp.content "\x00\x80\x00\x00" => NAT_PMP
+rule udp.content "\x00\x81\x00\x00" => NAT_PMP
+rule udp.content "\x00\x82\x00\x00" => NAT_PMP
+# PCP starts with version=2
+rule udp.content "\x02\x00\x00\x00" => NAT_PMP
+rule udp.content "\x02\x01\x00\x00" => NAT_PMP
+
+color nat_pmp.result_code != 0 => white red
+color nat_pmp.opcode == 0 || nat_pmp.opcode == 128 => black lightyellow
+color nat_pmp.opcode == 1 || nat_pmp.opcode == 129 => black lightblue
+color nat_pmp.opcode == 2 || nat_pmp.opcode == 130 => black lightgreen
+color nat_pmp => white darkblue
+
+alias pcp.version   => nat_pmp.version
+alias pcp.opcode    => nat_pmp.r_opcode
+alias pcp.lifetime  => nat_pmp.lifetime

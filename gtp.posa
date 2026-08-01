@@ -1,0 +1,217 @@
+# gtp.posa — GPRS Tunnelling Protocol (GTPv1 / GTPv2)
+#
+# GTP tunnels IP traffic between mobile network nodes. Two versions share the
+# same port range:
+#
+#   GTPv1 (flags bits 7-5 = 001) — used for GTP-U (user data) on UDP/2152
+#   and GTP-C (control) on UDP/2123. A 4-byte common header is followed by a
+#   4-byte TEID (Tunnel Endpoint ID), then optional sequence/N-PDU/ext fields.
+#
+#   GTPv2 (flags bits 7-5 = 010) — used for GTP-C v2 (S11/S5/S8 interfaces)
+#   on UDP/2123. A 4-byte common header is followed by an optional 4-byte TEID
+#   and a 3-byte sequence number.
+#
+# Reference: 3GPP TS 29.274 (GTPv2-C), 3GPP TS 29.281 (GTPv1-U)
+#
+# GTP-U:  UDP 2152  (user plane tunneling)
+# GTP-C:  UDP 2123  (control plane, v1 and v2)
+# GTP-PRIME: UDP 3386 (charging gateway)
+
+Lookup GtpV1MessageTypes
+    1   = "Echo Request"
+    2   = "Echo Response"
+    3   = "Version Not Supported"
+    4   = "Node Alive Request"
+    5   = "Node Alive Response"
+    6   = "Redirection Request"
+    7   = "Redirection Response"
+    16  = "Create PDP Context Request"
+    17  = "Create PDP Context Response"
+    18  = "Update PDP Context Request"
+    19  = "Update PDP Context Response"
+    20  = "Delete PDP Context Request"
+    21  = "Delete PDP Context Response"
+    22  = "Initiate PDP Context Activation Request"
+    23  = "Initiate PDP Context Activation Response"
+    24  = "Delete AA PDP Context Request"
+    25  = "Delete AA PDP Context Response"
+    26  = "Error Indication"
+    27  = "PDU Notification Request"
+    28  = "PDU Notification Response"
+    29  = "PDU Notification Reject Request"
+    30  = "PDU Notification Reject Response"
+    31  = "Supported Extension Header Notification"
+    32  = "Send Routing Info for GPRS Request"
+    33  = "Send Routing Info for GPRS Response"
+    34  = "Failure Report Request"
+    35  = "Failure Report Response"
+    36  = "Note MS GPRS Present Request"
+    37  = "Note MS GPRS Present Response"
+    48  = "Identification Request"
+    49  = "Identification Response"
+    50  = "SGSN Context Request"
+    51  = "SGSN Context Response"
+    52  = "SGSN Context Acknowledgement"
+    53  = "Forward Relocation Request"
+    54  = "Forward Relocation Response"
+    55  = "Forward Relocation Complete"
+    56  = "Relocation Cancel Request"
+    57  = "Relocation Cancel Response"
+    58  = "Forward SRNS Context"
+    59  = "Forward Relocation Complete Acknowledge"
+    60  = "Forward SRNS Context Acknowledge"
+    61  = "UE Registration Query Request"
+    62  = "UE Registration Query Response"
+    70  = "RAN Information Relay"
+    240 = "Data Record Transfer Request"
+    241 = "Data Record Transfer Response"
+    254 = "End Marker"
+    255 = "G-PDU (User Data)"
+
+Lookup GtpV2MessageTypes
+    1   = "Echo Request"
+    2   = "Echo Response"
+    3   = "Version Not Supported Indication"
+    25  = "Identification Request"
+    26  = "Identification Response"
+    27  = "Context Request"
+    28  = "Context Response"
+    29  = "Context Acknowledge"
+    30  = "Forward Relocation Request"
+    31  = "Forward Relocation Response"
+    32  = "Create Session Request"
+    33  = "Create Session Response"
+    34  = "Modify Bearer Request"
+    35  = "Modify Bearer Response"
+    36  = "Delete Session Request"
+    37  = "Delete Session Response"
+    38  = "Change Notification Request"
+    39  = "Change Notification Response"
+    40  = "Remote UE Report Notification"
+    41  = "Remote UE Report Acknowledge"
+    64  = "Modify Bearer Command"
+    65  = "Modify Bearer Failure Indication"
+    66  = "Delete Bearer Command"
+    67  = "Delete Bearer Failure Indication"
+    68  = "Bearer Resource Command"
+    69  = "Bearer Resource Failure Indication"
+    70  = "Downlink Data Notification Failure Indication"
+    71  = "Trace Session Activation"
+    72  = "Trace Session Deactivation"
+    73  = "Stop Paging Indication"
+    95  = "Create Bearer Request"
+    96  = "Create Bearer Response"
+    97  = "Update Bearer Request"
+    98  = "Update Bearer Response"
+    99  = "Delete Bearer Request"
+    100 = "Delete Bearer Response"
+    101 = "Delete PDN Connection Set Request"
+    102 = "Delete PDN Connection Set Response"
+    128 = "Identification Request (Rel 11+)"
+    129 = "Identification Response (Rel 11+)"
+    130 = "Context Request (Rel 11+)"
+    131 = "Context Response (Rel 11+)"
+    132 = "Context Acknowledge (Rel 11+)"
+    133 = "Forward Relocation Request (Rel 11+)"
+    134 = "Forward Relocation Response (Rel 11+)"
+    135 = "Forward Relocation Complete Notification"
+    136 = "Forward Relocation Complete Acknowledge"
+    149 = "Detach Notification"
+    150 = "Detach Acknowledge"
+    151 = "CS Paging Indication"
+    152 = "RAN Information Relay"
+    153 = "Alert MME Notification"
+    154 = "Alert MME Acknowledge"
+    155 = "UE Activity Notification"
+    156 = "UE Activity Acknowledge"
+    160 = "Create Forwarding Tunnel Request"
+    161 = "Create Forwarding Tunnel Response"
+    162 = "Suspend Notification"
+    163 = "Suspend Acknowledge"
+    164 = "Resume Notification"
+    165 = "Resume Acknowledge"
+    166 = "Create Indirect Data Forwarding Tunnel Request"
+    167 = "Create Indirect Data Forwarding Tunnel Response"
+    168 = "Delete Indirect Data Forwarding Tunnel Request"
+    169 = "Delete Indirect Data Forwarding Tunnel Response"
+    170 = "Release Access Bearers Request"
+    171 = "Release Access Bearers Response"
+    176 = "Downlink Data Notification"
+    177 = "Downlink Data Notification Acknowledge"
+    179 = "PGW Restart Notification"
+    180 = "PGW Restart Notification Acknowledge"
+    200 = "Update PDN Connection Set Request"
+    201 = "Update PDN Connection Set Response"
+    211 = "Modify Access Bearers Request"
+    212 = "Modify Access Bearers Response"
+
+Object<GTP> GTP_V1
+    abbrev "gtp"
+    col "GTP"
+
+    uint8 flags hex "Flags"
+        0x20 = "GTPv1, GTP-U"
+        0x22 = "GTPv1, GTP-U, seq"
+        0x30 = "GTPv1, GTP-Prime"
+        0x32 = "GTPv1, seq"
+
+    uint8 message_type lookup GtpV1MessageTypes "Message Type"
+    uint16 total_length "Length"
+    uint32 teid "TEID"
+
+    when flags == 0x22:
+        uint16 sequence_num "Sequence Number"
+        uint8 npdu_number "N-PDU Number"
+        uint8 next_ext_type "Next Extension Header Type"
+        payload body "Payload"
+    else:
+        payload body "Payload"
+
+    info "GTPv1 type=%u TEID=0x%08x" message_type, teid
+
+Object<GTP> GTP_V2
+    abbrev "gtp"
+    col "GTP"
+
+    uint8 flags hex "Flags"
+        0x40 = "GTPv2, no TEID"
+        0x48 = "GTPv2, with TEID"
+
+    uint8 message_type lookup GtpV2MessageTypes "Message Type"
+    uint16 message_length "Message Length"
+
+    when flags == 0x48:
+        uint32 teid "TEID"
+        uint8 seq1 "Seq High"
+        uint8 seq2 "Seq Mid"
+        uint8 seq3 "Seq Low"
+        uint8 spare "Spare"
+        payload body "IEs"
+    else:
+        uint8 seq1 "Seq High"
+        uint8 seq2 "Seq Mid"
+        uint8 seq3 "Seq Low"
+        uint8 spare "Spare"
+        payload body "IEs"
+
+    info "GTPv2 type=%u" message_type
+
+Object<GROUP> GTP
+
+rule udp.port == 2152 => GTP
+rule udp.port == 2123 => GTP
+rule udp.port == 3386 => GTP
+
+rule udp.content "\x20\xff" => GTP
+rule udp.content "\x32\xff" => GTP
+rule udp.content "\x32\x01" => GTP
+rule udp.content "\x32\x02" => GTP
+rule udp.content "\x40\x20" => GTP
+rule udp.content "\x48\x20" => GTP
+
+color gtp.message_type == 255 => black lightblue
+color gtp.message_type == 1 || gtp.message_type == 2 => black lightgray
+color gtp => white darkblue
+
+alias gtp.v1.type => gtp.message_type
+alias gtp.v2.type => gtp.message_type

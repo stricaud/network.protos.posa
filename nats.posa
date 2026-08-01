@@ -1,0 +1,57 @@
+# nats.posa — NATS Messaging Protocol
+#
+# NATS is a line-oriented text protocol: each message is a single line
+# terminated with \r\n. The first token on the line identifies the operation.
+#
+# Server-originated:  INFO {...}   MSG <subject> <sid> [reply] <#bytes>\r\n<payload>\r\n
+#                     PING         PONG         +OK         -ERR <desc>
+#
+# Client-originated:  CONNECT {...}   PUB <subject> [reply] <#bytes>\r\n<payload>\r\n
+#                     SUB <subject> [queue] <sid>      UNSUB <sid> [max]
+#                     PING         PONG
+#
+# Reference: https://docs.nats.io/reference/reference-protocols/nats
+#
+# Runs on TCP port 4222 (default).
+
+Object<NATS> NATS_SERVER
+    abbrev "nats"
+    col "NATS"
+    starts "INFO " "PING\r" "PONG\r" "+OK\r" "-ERR "
+           "MSG " "HMSG "
+
+    string op until " \r" "Operation"
+    payload rest "Rest"
+
+    info "%s" op
+
+Object<NATS> NATS_CLIENT
+    abbrev "nats"
+    col "NATS"
+    starts "CONNECT " "PUB " "SUB " "UNSUB "
+           "PING\r" "PONG\r" "HPUB " "HSUB "
+
+    string op until " \r" "Operation"
+    payload rest "Rest"
+
+    info "%s" op
+
+Object<GROUP> NATS
+
+rule tcp.port == 4222 => NATS
+rule tcp.port == 6222 => NATS
+
+rule tcp.content "INFO {"   => NATS
+rule tcp.content "CONNECT " => NATS
+rule tcp.content "PUB "     => NATS
+rule tcp.content "SUB "     => NATS
+rule tcp.content "MSG "     => NATS
+
+color nats.op == "MSG"     => black lightgreen
+color nats.op == "PUB"     => black lightyellow
+color nats.op == "SUB"     => black lightblue
+color nats.op == "+OK"     => black lightgreen
+color nats.op == "-ERR"    => white red
+color nats.op == "INFO"    => black lightgray
+color nats.op == "CONNECT" => black lightyellow
+color nats => white darkblue

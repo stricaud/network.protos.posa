@@ -1,0 +1,164 @@
+# memcached.posa — Memcached Text Protocol
+#
+# Memcached uses a line-oriented text protocol over TCP. Commands are
+# CRLF-terminated lines; the server replies with status keywords followed by
+# optional data.  A UDP framing header (8 bytes) precedes the text command
+# when Memcached is accessed over UDP.
+#
+# TCP text protocol:
+#   Client sends:  COMMAND <key> [flags] [expiry] [bytes] [noreply]\r\n
+#                  followed (for storage commands) by the value and \r\n
+#   Server replies: STATUS\r\n  or  VALUE <key> <flags> <bytes>\r\n<data>\r\n
+#
+# UDP framing (8 bytes before the text command):
+#   uint16_be request_id       — matches reply to request
+#   uint16_be sequence_number  — datagram sequence within a multi-datagram message
+#   uint16_be total_datagrams  — total datagrams for this message (must be ≠ 0)
+#   uint16_be reserved         — must be 0x0000
+#
+# Reference: https://github.com/memcached/memcached/blob/master/doc/protocol.txt
+#
+# Runs on TCP/UDP port 11211 (default).
+
+Lookup MemcachedCommands
+    "get"     = "Get"
+    "gets"    = "Get With CAS"
+    "set"     = "Set"
+    "add"     = "Add"
+    "replace" = "Replace"
+    "append"  = "Append"
+    "prepend" = "Prepend"
+    "cas"     = "Compare-And-Swap"
+    "delete"  = "Delete"
+    "incr"    = "Increment"
+    "decr"    = "Decrement"
+    "touch"   = "Touch"
+    "gat"     = "Get And Touch"
+    "gats"    = "Get And Touch With CAS"
+    "stats"   = "Statistics"
+    "flush_all" = "Flush All"
+    "version" = "Version"
+    "quit"    = "Quit"
+    "STORED"     = "Stored"
+    "NOT_STORED" = "Not Stored"
+    "EXISTS"     = "Exists (CAS conflict)"
+    "NOT_FOUND"  = "Not Found"
+    "DELETED"    = "Deleted"
+    "TOUCHED"    = "Touched"
+    "ERROR"      = "Error"
+    "CLIENT_ERROR" = "Client Error"
+    "SERVER_ERROR" = "Server Error"
+    "END"        = "End of Data"
+    "VALUE"      = "Value Data"
+    "STAT"       = "Stat Entry"
+    "VERSION"    = "Version Reply"
+
+# ── UDP framing header + text command ────────────────────────────────────────
+Object<MEMCACHED> MEMCACHED_UDP
+    abbrev "memcached"
+    col "Memcached"
+
+    uint16 request_id       "Request ID"
+    uint16 sequence_number  "Sequence Number"
+    uint16 total_datagrams  "Total Datagrams"
+    uint16 reserved         "Reserved"
+    string command until " \r" lookup MemcachedCommands "Command"
+    payload rest "Rest"
+
+    info "%s" command
+
+# ── TCP text stream ───────────────────────────────────────────────────────────
+Object<MEMCACHED> MEMCACHED_TCP
+    abbrev "memcached"
+    col "Memcached"
+    starts "get " "gets " "set " "add " "replace " "append " "prepend " "cas "
+           "delete " "incr " "decr " "touch " "gat " "gats " "stats" "version"
+           "flush_all" "quit\r"
+           "STORED\r" "NOT_STORED\r" "EXISTS\r" "NOT_FOUND\r" "DELETED\r"
+           "TOUCHED\r" "ERROR\r" "CLIENT_ERROR " "SERVER_ERROR " "END\r"
+           "VALUE " "STAT " "VERSION "
+
+    string command until " \r" lookup MemcachedCommands "Command"
+    payload rest "Rest"
+
+    info "%s" command
+
+# ── Binary protocol ──────────────────────────────────────────────────────────
+# Magic 0x80 = request, 0x81 = response. 24-byte fixed header:
+#   uint8 magic, uint8 opcode, uint16_be key_length, uint8 extras_length,
+#   uint8 data_type (0=raw), uint16_be vbucket_id/status, uint32_be total_body_length,
+#   uint32_be opaque, uint64_be cas
+Object<MEMCACHED> MEMCACHED_BIN
+    abbrev "memcached"
+    col "Memcached"
+
+    uint8  magic hex "Magic"
+        0x80 = "Request"
+        0x81 = "Response"
+    uint8  opcode hex "Opcode"
+        0x00 = "Get"
+        0x01 = "Set"
+        0x02 = "Add"
+        0x03 = "Replace"
+        0x04 = "Delete"
+        0x05 = "Increment"
+        0x06 = "Decrement"
+        0x07 = "Quit"
+        0x08 = "Flush"
+        0x09 = "Get Quietly"
+        0x0A = "No-op"
+        0x0B = "Version"
+        0x0C = "Get Key"
+        0x0D = "Get Key Quietly"
+        0x0E = "Append"
+        0x0F = "Prepend"
+        0x10 = "Statistics"
+        0x11 = "Set Quietly"
+        0x12 = "Add Quietly"
+        0x13 = "Replace Quietly"
+        0x14 = "Delete Quietly"
+        0x15 = "Increment Quietly"
+        0x16 = "Decrement Quietly"
+        0x17 = "Quit Quietly"
+        0x18 = "Flush Quietly"
+        0x19 = "Append Quietly"
+        0x1A = "Prepend Quietly"
+    uint16 key_length    "Key Length"
+    uint8  extras_length "Extras Length"
+    uint8  data_type     "Data Type"
+    uint16 vbucket_status hex "VBucket/Status"
+        0x0000 = "No error"
+        0x0001 = "Key not found"
+        0x0002 = "Key exists"
+        0x0003 = "Value too big"
+        0x0004 = "Invalid arguments"
+        0x0005 = "Item not stored"
+        0x0081 = "Unknown command"
+        0x0082 = "Out of memory"
+    uint32 total_body    "Total Body Length"
+    uint32 opaque        hex "Opaque"
+    uint64 cas           hex "CAS"
+    payload body         "Body"
+
+    info "Memcached binary %s op=0x%02x" magic, opcode
+
+Object<GROUP> MEMCACHED
+
+rule tcp.port == 11211 => MEMCACHED
+rule udp.port == 11211 => MEMCACHED
+
+rule tcp.content "set "     => MEMCACHED
+rule tcp.content "get "     => MEMCACHED
+rule tcp.content "delete "  => MEMCACHED
+rule tcp.content "STORED\r" => MEMCACHED
+rule tcp.content "VALUE "   => MEMCACHED
+rule tcp.content "ERROR\r"  => MEMCACHED
+rule tcp.content "\x80"     => MEMCACHED
+rule tcp.content "\x81"     => MEMCACHED
+
+color memcached.command == "set" || memcached.command == "add" || memcached.command == "replace" => black lightyellow
+color memcached.command == "get" || memcached.command == "gets" => black lightblue
+color memcached.command == "STORED" => black lightgreen
+color memcached.command == "NOT_FOUND" || memcached.command == "NOT_STORED" => black lightgray
+color memcached.command == "ERROR" || memcached.command == "CLIENT_ERROR" || memcached.command == "SERVER_ERROR" => white red
+color memcached => white darkblue

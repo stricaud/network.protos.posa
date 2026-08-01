@@ -1,0 +1,82 @@
+# bittorrent.posa — BitTorrent Peer Wire Protocol (BEP-3)
+#
+# The TCP peer wire protocol opens every connection with a structured
+# handshake:
+#
+#   pstrlen   1 byte  — length of the protocol string, always 0x13 (19)
+#   pstr     19 bytes — "BitTorrent protocol"
+#   reserved  8 bytes — extension bits (BEP-10 extension protocol, Fast ext, etc.)
+#   info_hash 20 bytes — SHA1 of the torrent info dictionary
+#   peer_id   20 bytes — unique client identifier (20 ASCII/binary bytes)
+#
+# Total: 68 bytes for the handshake. After it both sides can send messages
+# using the BitTorrent message format: uint32_be length + uint8 type + payload.
+#
+# Extension bits (reserved field) encode capabilities:
+#   bit 20 (from the right) — Extension Protocol (BEP-10)
+#   bit 0                   — DHT Protocol (BEP-5)
+#
+# Reference: https://www.bittorrent.org/beps/bep_0003.html (BEP-3)
+#            https://www.bittorrent.org/beps/bep_0010.html (BEP-10)
+#
+# uTP (UDP-based transport, BEP-29) uses an entirely different header;
+# DHT and tracker traffic are also distinct. This decoder covers TCP only.
+
+Object<BITTORRENT> BT_HANDSHAKE
+    abbrev "bittorrent"
+    col "BitTorrent"
+    starts "\x13BitTorrent protocol"
+
+    uint8    pstrlen  "Protocol Name Length"
+    str<19>  pstr     "Protocol"
+    bytes<8> reserved hex "Reserved / Extension Bits"
+    bytes<20> info_hash "Info Hash"
+    bytes<20> peer_id   "Peer ID"
+
+    payload rest "Post-Handshake"
+
+    info "BT handshake info_hash=%s" info_hash
+
+Object<BITTORRENT> BT_MESSAGE
+    abbrev "bittorrent"
+    col "BitTorrent"
+
+    uint32 msg_length "Message Length"
+    when msg_length == 0:
+        # keep-alive: no type byte
+        payload rest "Keep-Alive"
+    else:
+        uint8 msg_type "Message Type"
+            0  = "Choke"
+            1  = "Unchoke"
+            2  = "Interested"
+            3  = "Not Interested"
+            4  = "Have"
+            5  = "Bitfield"
+            6  = "Request"
+            7  = "Piece"
+            8  = "Cancel"
+            9  = "Port (DHT)"
+            14 = "Have All (Fast)"
+            15 = "Have None (Fast)"
+            16 = "Reject Request (Fast)"
+            17 = "Allowed Fast (Fast)"
+            19 = "Suggest Piece (Fast)"
+            20 = "Extended (BEP-10)"
+
+        payload body "Payload"
+
+    info "BT msg type=%u len=%u" msg_type, msg_length
+
+Object<GROUP> BITTORRENT
+
+rule tcp.content "\x13BitTorrent protocol" => BITTORRENT
+
+color bittorrent.msg_type == 7  => black lightgreen
+color bittorrent.msg_type == 6  => black lightblue
+color bittorrent.msg_type == 20 => black lightyellow
+color bittorrent.msg_type == 0 || bittorrent.msg_type == 1 => black lightgray
+color bittorrent => white darkblue
+
+alias bt.info_hash => bittorrent.info_hash
+alias bt.peer_id   => bittorrent.peer_id

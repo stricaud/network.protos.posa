@@ -1,0 +1,42 @@
+# vxlan.posa — Virtual eXtensible Local Area Network (RFC 7348)
+#
+# VXLAN encapsulates Ethernet frames in UDP to provide Layer 2 overlay networks
+# across Layer 3 boundaries. Each VXLAN packet has an 8-byte header:
+#
+#   uint8  flags     — bits 7-4 reserved (0), bit 3 = I (VNI valid), bits 2-0 reserved
+#   uint24 reserved1 — must be 0
+#   uint24 vni       — 24-bit VXLAN Network Identifier
+#   uint8  reserved2 — must be 0
+#
+# When the I-flag is set the VNI field is valid. A VXLAN frame carrying a
+# Ethernet frame follows immediately after the 8-byte header.
+#
+# VXLAN-GPE (Generic Protocol Extension, RFC 8926) extends the flags to add
+# a next-protocol field, but the UDP port is the same and the base 8-byte
+# header shape is compatible.
+#
+# Reference: RFC 7348, RFC 8926 (VXLAN-GPE)
+# Default UDP port: 4789 (IANA), 8472 (Linux legacy)
+
+Object<main> VXLAN
+    abbrev "vxlan"
+    col "VXLAN"
+
+    uint8  flags    hex "Flags"
+        0x08 = "VNI Valid (I-flag set)"
+    uint24 reserved hex "Reserved"
+    uint24 vni      "VNI (VXLAN Network Identifier)"
+    uint8  reserved2 "Reserved2"
+    payload inner_frame "Inner Ethernet Frame"
+
+    info "VXLAN VNI=%u" vni
+
+rule udp.port == 4789  => VXLAN
+rule udp.port == 8472  => VXLAN
+
+# VXLAN header always has flags=0x08 (VNI valid); reserved must be 0.
+rule udp.content "\x08\x00\x00\x00" => VXLAN
+
+color vxlan => white darkblue
+
+alias vxlan.network_id => vxlan.vni

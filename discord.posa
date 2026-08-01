@@ -1,0 +1,87 @@
+# discord.posa — Discord Voice UDP Protocol
+#
+# Discord voice traffic uses a custom UDP protocol derived from RTP.
+# Two identifiable packet types appear before voice data begins:
+#
+# 1) IP Discovery (type 0x00010046 = request, 0x00020046 = response):
+#    uint32  type         — 0x00010046 (request) or 0x00020046 (response)
+#    uint32  ssrc         — voice SSRC allocated by Discord server
+#    str<64> client_ip    — NUL-padded ASCII IP address
+#    uint16  port         — client's external UDP port
+#    Total: 74 bytes
+#
+# 2) Keep-Alive (magic 0x1337cafe):
+#    uint32  magic        — 0x1337cafe (identifies keep-alive)
+#    uint32  nonce        — monotonically increasing counter
+#    Total: 8 bytes
+#
+# After the discovery exchange, Discord sends RTP-like voice frames:
+#    uint8   flags        — 0x80 (RTP-like)
+#    uint8   payload_type — 0x78 (Discord Opus)
+#    uint16  sequence     — RTP sequence number
+#    uint32  timestamp    — RTP timestamp
+#    uint32  ssrc         — SSRC
+#    bytes   payload      — encrypted Opus audio (XSalsa20-Poly1305 or AEAD-AES256-GCM)
+#
+# Voice payload is encrypted, so only the headers are readable.
+#
+# Reference: https://discord.com/developers/docs/topics/voice-connections
+#
+# Discord uses dynamic UDP ports selected by the client; port ranges are
+# typically 50000-65535. Content rules are the primary detection mechanism.
+
+Object<DISCORD> DISCORD_IP_DISCOVERY
+    abbrev "discord"
+    col "Discord"
+
+    uint32 type hex "Packet Type"
+        0x00010046 = "IP Discovery Request"
+        0x00020046 = "IP Discovery Response"
+    uint32 ssrc hex "SSRC"
+    str<64> client_ip "Client IP"
+    uint16 port "Client Port"
+
+    info "Discord IP discovery type=0x%08x ssrc=0x%08x" type, ssrc
+
+Object<DISCORD> DISCORD_KEEPALIVE
+    abbrev "discord"
+    col "Discord"
+
+    uint32 magic hex "Magic"
+        0x1337cafe = "Keep-Alive"
+    uint32 nonce "Nonce"
+
+    info "Discord keep-alive nonce=%u" nonce
+
+Object<DISCORD> DISCORD_VOICE
+    abbrev "discord"
+    col "Discord"
+
+    uint8  flags        hex "Flags"
+    uint8  payload_type hex "Payload Type"
+        0x78 = "Discord Opus"
+    uint16 sequence     "Sequence"
+    uint32 timestamp    "RTP Timestamp"
+    uint32 ssrc         hex "SSRC"
+    payload encrypted_payload "Encrypted Opus Payload"
+
+    info "Discord voice ssrc=0x%08x seq=%u" ssrc, sequence
+
+Object<GROUP> DISCORD
+
+rule udp.content "\x00\x01\x00\x46" => DISCORD
+rule udp.content "\x00\x02\x00\x46" => DISCORD
+rule udp.content "\x13\x37\xca\xfe" => DISCORD
+
+# Voice RTP-like packets: flags=0x80, payload_type=0x78
+rule udp.content "\x80\x78" => DISCORD
+
+color discord.type == 0x00010046 => black lightyellow
+color discord.type == 0x00020046 => black lightgreen
+color discord.magic == 0x1337cafe => black lightgray
+color discord.payload_type == 0x78 => black lightblue
+color discord => white darkblue
+
+alias discord.ip_request   => discord.type == 0x00010046
+alias discord.ip_response  => discord.type == 0x00020046
+alias discord.keepalive    => discord.magic == 0x1337cafe

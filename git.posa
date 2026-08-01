@@ -1,0 +1,51 @@
+# git.posa — Git Smart Protocol (git upload-pack / receive-pack)
+#
+# Git's "smart" wire protocol (v1 and v2) over TCP uses pkt-line encoding:
+# every line is prefixed with a 4-hex-digit length (including the 4-byte
+# prefix itself). A flush packet is 0000. A delimiter packet is 0001 (v2).
+#
+# Session flow (fetch, protocol v1):
+#   Server sends: reference advertisement (pkt-lines listing refs)
+#   Client sends: want/have lines then "done"
+#   Server sends: PACK data
+#
+# Protocol v2 (Git 2.26+):
+#   Client sends capability advertisement, server responds with capabilities.
+#   Implemented as structured command dispatch.
+#
+# The TCP session starts with the server's first pkt-line advertisement.
+# Common first bytes: "00" (pkt-line length in hex) or "git-upload-pack"
+# if the client is initiating.
+#
+# Reference: https://git-scm.com/docs/protocol-v2
+#            https://git-scm.com/docs/pack-protocol
+# Default TCP port: 9418
+
+Object<GIT> GIT_UPLOAD_PACK
+    abbrev "git"
+    col "Git"
+    starts "git-upload-pack"
+
+    string service until "\x00\r\n" "Service"
+    payload rest "Advertisement"
+
+    info "Git %s" service
+
+Object<GIT> GIT_PKTLINE
+    abbrev "git"
+    col "Git"
+
+    str<4>  pkt_len    "Packet Length (hex)"
+    payload pkt_data   "Packet Data"
+
+    info "Git pkt-line len=%s" pkt_len
+
+Object<GROUP> GIT
+
+rule tcp.port == 9418 => GIT
+
+rule tcp.content "git-upload-pack"   => GIT
+rule tcp.content "git-receive-pack"  => GIT
+rule tcp.content "git-upload-archive" => GIT
+
+color git => white darkblue

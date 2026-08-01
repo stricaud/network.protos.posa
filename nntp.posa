@@ -1,0 +1,114 @@
+# nntp.posa — Network News Transfer Protocol (NNTP / Usenet, RFC 3977)
+#
+# NNTP is a line-oriented text protocol used to distribute and retrieve
+# Usenet news articles. Commands are single-line ASCII; responses start with
+# a 3-digit status code followed by a space and a human-readable message.
+#
+# Client commands: CAPABILITIES, MODE READER, AUTHINFO USER/PASS, LIST,
+#   GROUP, ARTICLE, HEAD, BODY, STAT, NEXT, LAST, NEWGROUPS, NEWNEWS,
+#   OVER, HDR, IHAVE, POST, QUIT
+#
+# Server responses:
+#   1xx — Informational (100=help, 101=capabilities)
+#   2xx — Completed (200=ready, 215=list follows, 220=article, 221=head,
+#          222=body, 223=stat, 224=overview follows, 225=headers follow)
+#   3xx — Continue (335=send article, 381=password required)
+#   4xx — Transient errors (411=no such group, 420=no current article,
+#          430=no such article, 480=authentication required)
+#   5xx — Fatal errors (501=syntax error, 502=no permission)
+#
+# Reference: RFC 3977 (NNTP), RFC 4643 (AUTHINFO), RFC 4644 (STREAMING)
+# Default TCP port: 119 (NNTP), 563 (NNTPS/TLS), 433 (news readers)
+
+Lookup NntpStatusCodes
+    "100" = "Help text follows"
+    "101" = "Capability list follows"
+    "111" = "Server date and time"
+    "200" = "Service available, posting allowed"
+    "201" = "Service available, posting prohibited"
+    "202" = "Slave status noted"
+    "203" = "Streaming is OK"
+    "205" = "Connection closing"
+    "211" = "Group selected"
+    "215" = "List of newsgroups follows"
+    "220" = "Article follows"
+    "221" = "Article headers follow"
+    "222" = "Article body follows"
+    "223" = "Article exists"
+    "224" = "Overview information follows"
+    "225" = "Headers follow"
+    "230" = "List of new articles follows"
+    "231" = "List of new newsgroups follows"
+    "235" = "Article transferred OK"
+    "240" = "Article posted"
+    "250" = "Authorization accepted"
+    "281" = "Authentication accepted"
+    "283" = "Authentication accepted (SASL)"
+    "335" = "Send article to be transferred"
+    "340" = "Send article to be posted"
+    "381" = "Enter passphrase"
+    "383" = "Continue with SASL exchange"
+    "400" = "Service temporarily unavailable"
+    "401" = "Wrong MODE"
+    "411" = "No such newsgroup"
+    "412" = "No newsgroup selected"
+    "420" = "No current article"
+    "421" = "No next article"
+    "422" = "No previous article"
+    "423" = "No such article in group"
+    "430" = "No such article"
+    "431" = "Try sending it again later"
+    "435" = "Article not wanted"
+    "436" = "Transfer failed, try again later"
+    "437" = "Article rejected, do not retry"
+    "440" = "Posting not permitted"
+    "441" = "Posting failed"
+    "450" = "Authorization required"
+    "452" = "Authorization data rejected"
+    "480" = "Authentication required"
+    "481" = "Authentication failed"
+    "482" = "Authentication commands issued out of sequence"
+    "483" = "Operation only available after authentication"
+    "500" = "Unknown command"
+    "501" = "Syntax error in command"
+    "502" = "Access restriction or permission denied"
+    "503" = "Feature not supported"
+    "504" = "Base64 encoding error"
+
+Object<NNTP> NNTP_RESPONSE
+    abbrev "nntp"
+    col "NNTP"
+    starts "1" "2" "3" "4" "5"
+
+    string status_code until " \r" lookup NntpStatusCodes "Status Code"
+    string message until "\r" "Message"
+    payload rest "Data"
+
+    info "%s %s" status_code, message
+
+Object<NNTP> NNTP_COMMAND
+    abbrev "nntp"
+    col "NNTP"
+    starts "CAPABILITIES" "MODE" "AUTHINFO" "LIST" "GROUP" "ARTICLE"
+           "HEAD" "BODY" "STAT" "NEXT" "LAST" "NEWGROUPS" "NEWNEWS"
+           "OVER" "HDR" "IHAVE" "POST" "QUIT" "SLAVE" "CHECK" "TAKETHIS"
+           "DATE" "HELP"
+
+    string command until " \r" "Command"
+    payload args "Arguments"
+
+    info "%s" command
+
+Object<GROUP> NNTP
+
+rule tcp.port == 119 => NNTP
+rule tcp.port == 433 => NNTP
+
+color nntp.status_code == "220" || nntp.status_code == "221" || nntp.status_code == "222" => black lightblue
+color nntp.status_code == "235" || nntp.status_code == "240" => black lightgreen
+color nntp.status_code == "480" || nntp.status_code == "481" || nntp.status_code == "483" => black lightyellow
+color nntp.status_code >= "400" => white red
+color nntp => white darkblue
+
+alias usenet.status => nntp.status_code
+alias news.command  => nntp.command

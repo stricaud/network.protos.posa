@@ -1,0 +1,95 @@
+# smpp.posa — Short Message Peer-to-Peer Protocol (SMPP 3.4 / 5.0)
+#
+# SMPP is a TCP protocol used between SMS service providers and aggregators
+# for exchanging short messages (SMS). Each PDU has a fixed 16-byte header:
+#
+#   uint32_be command_length  — total length of the PDU including the header
+#   uint32_be command_id      — operation code
+#   uint32_be command_status  — status code (0 = success in request PDUs)
+#   uint32_be sequence_number — unique PDU sequence number
+#
+# Followed by the command-specific body (variable length).
+#
+# Reference: SMPP v3.4 and v5.0 specification (SMPP Developers Forum)
+# Default TCP port: 2775
+
+Lookup SmppCommandIds
+    0x00000001 = "bind_receiver"
+    0x00000002 = "bind_transmitter"
+    0x00000003 = "query_sm"
+    0x00000004 = "submit_sm"
+    0x00000005 = "deliver_sm"
+    0x00000006 = "unbind"
+    0x00000007 = "replace_sm"
+    0x00000008 = "cancel_sm"
+    0x00000009 = "bind_transceiver"
+    0x0000000B = "outbind"
+    0x00000015 = "enquire_link"
+    0x00000021 = "submit_multi"
+    0x00000102 = "alert_notification"
+    0x00000103 = "data_sm"
+    0x80000001 = "bind_receiver_resp"
+    0x80000002 = "bind_transmitter_resp"
+    0x80000003 = "query_sm_resp"
+    0x80000004 = "submit_sm_resp"
+    0x80000005 = "deliver_sm_resp"
+    0x80000006 = "unbind_resp"
+    0x80000007 = "replace_sm_resp"
+    0x80000008 = "cancel_sm_resp"
+    0x80000009 = "bind_transceiver_resp"
+    0x80000015 = "enquire_link_resp"
+    0x80000021 = "submit_multi_resp"
+    0x80000103 = "data_sm_resp"
+    0x80000000 = "generic_nack"
+
+Object<main> SMPP
+    abbrev "smpp"
+    col "SMPP"
+
+    uint32 command_length   "Command Length"
+    uint32 command_id       hex lookup SmppCommandIds "Command ID"
+    uint32 command_status   hex "Command Status"
+        0x00000000 = "ESME_ROK (Success)"
+        0x00000001 = "ESME_RINVMSGLEN"
+        0x00000002 = "ESME_RINVCMDLEN"
+        0x00000003 = "ESME_RINVCMDID"
+        0x00000004 = "ESME_RINVBNDSTS"
+        0x00000005 = "ESME_RALYBND"
+        0x00000006 = "ESME_RINVPRTFLG"
+        0x00000007 = "ESME_RINVREGDLVFLG"
+        0x00000008 = "ESME_RSYSERR"
+        0x0000000A = "ESME_RINVSRCADR"
+        0x0000000B = "ESME_RINVDSTADR"
+        0x0000000C = "ESME_RINVMSGID"
+        0x0000000D = "ESME_RBINDFAIL"
+        0x0000000E = "ESME_RINVPASWD"
+        0x0000000F = "ESME_RINVSYSID"
+        0x00000011 = "ESME_RCANCELFAIL"
+        0x00000013 = "ESME_RREPLACEFAIL"
+        0x00000061 = "ESME_RMSGQFUL"
+        0x00000063 = "ESME_RINVSERTYP"
+        0x00000064 = "ESME_RINVNUMDESTS"
+        0x00000065 = "ESME_RINVDLNAME"
+        0x00000073 = "ESME_RINVDESTFLAG"
+        0x00000075 = "ESME_RINVSUBREP"
+        0x00000076 = "ESME_RINVESMCLASS"
+        0x00000077 = "ESME_RCNTSUBDL"
+        0x00000078 = "ESME_RSUBMITFAIL"
+    uint32 sequence_number  "Sequence Number"
+    payload body            "PDU Body"
+
+    info "SMPP %s seq=%u" command_id, sequence_number
+
+rule tcp.port == 2775 => SMPP
+
+# SMPP has no fixed magic; use port rule only.
+# command_length is at least 16 for the header alone; try common first byte.
+
+color smpp.command_id == 0x00000004 || smpp.command_id == 0x00000005 => black lightyellow
+color smpp.command_id == 0x80000004 || smpp.command_id == 0x80000005 => black lightgreen
+color smpp.command_id == 0x80000000 => white red
+color smpp.command_status != 0x00000000 => white red
+color smpp => white darkblue
+
+alias smpp.submit_sm   => smpp.command_id == 0x00000004
+alias smpp.deliver_sm  => smpp.command_id == 0x00000005

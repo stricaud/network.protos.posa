@@ -1,0 +1,73 @@
+# sflow.posa — sFlow Network Traffic Sampling (RFC 3176)
+#
+# sFlow is a UDP-based protocol where network devices (switches, routers) send
+# sampled packets and interface counters to a collector. Each sFlow datagram
+# starts with a common header:
+#
+#   uint32 version         — sFlow version: 2, 4, or 5
+#   uint32 agent_addr_type — 1=IPv4, 2=IPv6
+#   [ip4 or ip6 agent_addr]
+#   uint32 sub_agent_id    — agent sub-id (v5 only; zero in v2/v4)
+#   uint32 sequence_num    — datagram sequence number
+#   uint32 uptime          — milliseconds since agent boot
+#   uint32 num_samples     — number of sample records following
+#
+# sFlow sample records are XDR-encoded and variable length. Only the fixed
+# header is decoded here; the sample records need a more complex parser.
+#
+# Reference: RFC 3176 (sFlow v4), sFlow v5: https://sflow.org/sflow_version_5.txt
+# Default UDP port: 6343
+
+Object<SFLOW> SFLOW_V5
+    abbrev "sflow"
+    col "sFlow"
+
+    uint32 version "Version"
+        2 = "sFlow v2"
+        4 = "sFlow v4"
+        5 = "sFlow v5"
+    uint32 agent_addr_type "Agent Address Type"
+        1 = "IPv4"
+        2 = "IPv6"
+    ip4    agent_address "Agent IPv4 Address"
+    uint32 sub_agent_id  "Sub-Agent ID"
+    uint32 sequence_num  "Sequence Number"
+    uint32 uptime        "System Uptime (ms)"
+    uint32 num_samples   "Number of Samples"
+    payload samples      "Sample Records"
+
+    info "sFlow v%u from %s samples=%u" version, agent_address, num_samples
+
+Object<SFLOW> SFLOW_V2
+    abbrev "sflow"
+    col "sFlow"
+
+    uint32 version "Version"
+        2 = "sFlow v2"
+        4 = "sFlow v4"
+    uint32 agent_addr_type "Agent Address Type"
+        1 = "IPv4"
+        2 = "IPv6"
+    ip4    agent_address "Agent IPv4 Address"
+    uint32 sequence_num  "Sequence Number"
+    uint32 uptime        "System Uptime (ms)"
+    uint32 num_samples   "Number of Samples"
+    payload samples      "Sample Records"
+
+    info "sFlow v%u from %s samples=%u" version, agent_address, num_samples
+
+Object<GROUP> SFLOW
+
+rule udp.port == 6343 => SFLOW
+
+# sFlow v5 starts with uint32 = 5, sFlow v2 with 2, v4 with 4
+rule udp.content "\x00\x00\x00\x05" => SFLOW
+rule udp.content "\x00\x00\x00\x04" => SFLOW
+rule udp.content "\x00\x00\x00\x02" => SFLOW
+
+color sflow.version == 5 => black lightblue
+color sflow.version == 4 => black lightgray
+color sflow => white darkblue
+
+alias sflow.agent => sflow.agent_address
+alias sflow.count => sflow.num_samples

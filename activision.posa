@@ -1,0 +1,45 @@
+# activision.posa — Activision game traffic (Call of Duty, Warzone, etc.)
+#
+# Activision's UDP game protocol carries two variants, distinguished by the
+# first two bytes (big-endian magic):
+#
+#   0x0C02 / 0x0D02 — original variant; 0x0C02 is client→server, 0x0D02 is
+#                     server→client on the first packet.  Subsequent packets
+#                     use 0x29 (client) or 0x28 (server) as the first byte.
+#
+#   0x4600 / 0x4700 — newer protocol-level direction markers.
+#
+# Beyond the direction/type marker the payload is proprietary and largely
+# encrypted; only the marker byte is decodable.
+#
+# Minimum packet length: 18 bytes.  Detection requires >4 packets matching
+# the pattern before classification (nDPI heuristic; see activision.c).
+#
+# Runs on UDP, no fixed port — detected by packet content only.
+
+Object<main> ACTIVISION
+    abbrev "activision"
+    col "Activision"
+
+    uint8 packet_type "Packet Type"
+        0x0C = "Client Request (0x0C02 variant)"
+        0x0D = "Server Reply (0x0D02 variant)"
+        0x29 = "Client Subsequent"
+        0x28 = "Server Subsequent"
+        0x46 = "Client (0x4600 variant)"
+        0x47 = "Server (0x4700 variant)"
+
+    payload body "Body"
+
+    info "Activision type=0x%02x" packet_type
+
+rule udp.content "\x0c\x02" => ACTIVISION
+rule udp.content "\x0d\x02" => ACTIVISION
+rule udp.content "\x46\x00" => ACTIVISION
+rule udp.content "\x47\x00" => ACTIVISION
+
+color activision.packet_type == 0x0C => black lightyellow
+color activision.packet_type == 0x0D => black lightblue
+color activision.packet_type == 0x46 => black lightyellow
+color activision.packet_type == 0x47 => black lightblue
+color activision => white darkblue

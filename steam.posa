@@ -1,0 +1,75 @@
+# steam.posa — Steam Protocol (Discovery + In-Home Streaming)
+#
+# Steam uses several UDP and TCP protocols. The most reliably structured
+# for detection are:
+#
+# 1) Steam In-Home Streaming (IHS) Discovery — UDP broadcast, port 27036:
+#    Client sends a discovery query; servers respond with streaming capability.
+#    Starts with a fixed 8-byte LE magic: FF FF FF FF 21 4C 5F A0
+#    (uint64_le 0xA05F4C21FFFFFFFF).
+#    Followed by a uint32_le message_type and uint32_le payload_length,
+#    then a protobuf-encoded payload.
+#
+# 2) Steam Friends / Community (CM) — TCP, port 27017/27036/443/27015:
+#    Fixed header: uint32_le payload_length + uint32_le magic (0x31305456 = "VT01")
+#    Followed by a GZip-compressed protobuf payload.
+#    This is also used for the Steam client-to-CM server channel.
+#
+# 3) Steam Datagram Relay (SDR) / GameNetworkingSockets — UDP:
+#    Variable structure; first byte is the connection type discriminator.
+#    Not statically decodable without context.
+#
+# Reference: https://github.com/nickcoutsos/steamcontroller/wiki/Steam-IHS-Discovery
+#            https://github.com/ValveSoftware/GameNetworkingSockets
+#
+# Ports: UDP 27036 (IHS discovery), TCP 27017/27036 (CM), UDP/TCP 27015 (game server queries)
+
+# ── In-Home Streaming Discovery ───────────────────────────────────────────────
+Object<STEAM> STEAM_IHS_DISCOVERY
+    abbrev "steam"
+    col "Steam"
+
+    bytes<4> magic1 hex "Magic1 (0xFFFFFFFF)"
+    bytes<4> magic2 hex "Magic2 (0xA05F4C21)"
+    le_uint32 message_type "Message Type"
+        1 = "Discovery Request"
+        2 = "Discovery Response"
+        3 = "Streaming Request"
+        4 = "Streaming Response"
+    le_uint32 payload_length "Payload Length"
+    bytes[payload_length] body "Protobuf Payload"
+
+    info "Steam IHS type=%u len=%u" message_type, payload_length
+
+# ── Steam CM (Community Manager) ─────────────────────────────────────────────
+Object<STEAM> STEAM_CM
+    abbrev "steam"
+    col "Steam"
+
+    le_uint32 payload_length "Payload Length"
+    le_uint32 magic hex "Magic"
+        0x31305456 = "VT01 (Steam CM)"
+        0x564E4F51 = "QNOV (GC)"
+    bytes[payload_length] body "Protobuf Payload"
+
+    info "Steam CM magic=0x%08x len=%u" magic, payload_length
+
+Object<GROUP> STEAM
+
+rule udp.port == 27036 => STEAM
+rule tcp.port == 27036 => STEAM
+rule tcp.port == 27017 => STEAM
+
+# IHS magic: \xFF\xFF\xFF\xFF\x21\x4C\x5F\xA0
+rule udp.content "\xff\xff\xff\xff\x21\x4c\x5f\xa0" => STEAM
+
+# Steam CM magic "VT01" at offset 4 is not directly expressible as a content rule,
+# but the 4-byte zero payload_length check is not reliable; use port rule only for CM.
+
+color steam.message_type == 1 => black lightyellow
+color steam.message_type == 2 => black lightgreen
+color steam.magic == 0x31305456 => black lightblue
+color steam => white darkblue
+
+alias steam.ihs    => steam.message_type
+alias steam.cm     => steam.magic

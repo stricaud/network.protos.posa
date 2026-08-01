@@ -1,0 +1,83 @@
+# thrift.posa — Apache Thrift Binary Protocol
+#
+# Apache Thrift is an RPC framework. Several wire protocols exist; the most
+# common is the "Binary Protocol" (strict message framing):
+#
+#   uint32  frame_length  — length of the following message (optional, when framed)
+#
+#   Binary Protocol message envelope:
+#     uint32  version_type — high 16 bits: 0x8001 (version), low 16 bits: message type
+#                            OR (non-strict) uint8 field_type = 12 (start of struct)
+#     uint32  method_len   — length of the method name (strict form)
+#     str[method_len] method
+#     uint32  seq_id       — sequence/correlation ID
+#
+# Message types: 1=Call, 2=Reply, 3=Exception, 4=Oneway
+#
+# Compact Protocol (type 2, 0x82) starts with a 2-byte header:
+#   uint8  protocol_id   — 0x82 (compact protocol identifier)
+#   uint8  version_type  — bits 7-5: message type, bits 4-0: version (must be 1)
+#   varint seq_id        — zigzag-encoded sequence ID
+#   string method_name
+#
+# Reference: https://github.com/apache/thrift/blob/master/doc/specs/thrift-binary-protocol.md
+# Default TCP port: 9090 (common default)
+
+Object<THRIFT> THRIFT_BINARY
+    abbrev "thrift"
+    col "Thrift"
+    starts "\x80\x01"
+
+    uint16 version      hex "Version"
+        0x8001 = "Binary Protocol v1"
+    uint16 message_type "Message Type"
+        1 = "Call"
+        2 = "Reply"
+        3 = "Exception"
+        4 = "Oneway"
+    uint32 method_len   "Method Name Length"
+    str[method_len] method "Method Name"
+    uint32 seq_id       "Sequence ID"
+    payload body        "Message Body"
+
+    info "Thrift %s %s seq=%u" message_type, method, seq_id
+
+Object<THRIFT> THRIFT_COMPACT
+    abbrev "thrift"
+    col "Thrift"
+    starts "\x82"
+
+    uint8  protocol_id  hex "Protocol ID"
+        0x82 = "Compact Protocol"
+    uint8  version_type hex "Version/Type"
+    payload rest        "Method + Body"
+
+    info "Thrift compact"
+
+Object<THRIFT> THRIFT_FRAMED
+    abbrev "thrift"
+    col "Thrift"
+
+    uint32 frame_length "Frame Length"
+    starts "\x80\x01" "\x82"
+    payload frame       "Framed Message"
+
+    info "Thrift framed len=%u" frame_length
+
+Object<GROUP> THRIFT
+
+rule tcp.port == 9090 => THRIFT
+
+rule tcp.content "\x80\x01\x00\x01" => THRIFT
+rule tcp.content "\x80\x01\x00\x02" => THRIFT
+rule tcp.content "\x80\x01\x00\x04" => THRIFT
+rule tcp.content "\x82"             => THRIFT
+
+color thrift.message_type == 1 => black lightyellow
+color thrift.message_type == 2 => black lightgreen
+color thrift.message_type == 3 => white red
+color thrift => white darkblue
+
+alias thrift.call    => thrift.message_type == 1
+alias thrift.reply   => thrift.message_type == 2
+alias thrift.exception => thrift.message_type == 3

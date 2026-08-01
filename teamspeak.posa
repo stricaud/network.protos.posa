@@ -1,0 +1,67 @@
+# teamspeak.posa — TeamSpeak 3 Protocol
+#
+# TeamSpeak 3 uses two wire formats depending on transport:
+#
+#   UDP TS3INIT1 — session handshake; begins with the ASCII literal "TS3INIT1"
+#   (8 bytes), then uint8 reserved (0x65), uint16_be version, uint8 command
+#   (0x00 = initiation, 0x01 = reply), uint32_be random, uint32_be cookie.
+#
+#   TCP legacy — management/query connection; begins with a uint32_be magic:
+#   0xF4BE0100 (client greeting), 0xF4BE0200 (server greeting), 0xF4BE0300
+#   (data frame). After the magic: uint32_be length, then the payload.
+#
+# TeamSpeak 3 voice traffic uses encrypted UDP packets after the handshake;
+# only the handshake is decodable.
+#
+# Default port: UDP/TCP 9987 (voice + control).
+
+Object<TS> TEAMSPEAK_UDP
+    abbrev "ts"
+    col "TeamSpeak"
+    starts "TS3INIT1"
+
+    str<8>   magic       "Magic"
+    uint8    reserved    "Reserved"
+    uint16   ts_version  "TS Version"
+    uint8    command     "Command"
+        0    = "Initiation"
+        1    = "Reply"
+    uint32   random      hex "Random"
+    uint32   cookie      hex "Cookie"
+    payload  rest        "Payload"
+
+    info "TS3INIT1 cmd=%u" command
+
+Object<TS> TEAMSPEAK_TCP
+    abbrev "ts"
+    col "TeamSpeak"
+
+    uint32 magic hex "Magic"
+        0xF4BE0100 = "Client Greeting"
+        0xF4BE0200 = "Server Greeting"
+        0xF4BE0300 = "Data Frame"
+
+    uint32 length "Length"
+    payload body  "Body"
+
+    info "TeamSpeak TCP magic=0x%08x" magic
+
+Object<GROUP> TS
+
+rule tcp.port == 9987 => TS
+rule udp.port == 9987 => TS
+rule tcp.port == 10011 => TS
+rule tcp.port == 30033 => TS
+
+rule udp.content "TS3INIT1"   => TS
+rule tcp.content "\xf4\xbe\x01\x00" => TS
+rule tcp.content "\xf4\xbe\x02\x00" => TS
+
+color ts.command == 0 => black lightyellow
+color ts.command == 1 => black lightgreen
+color ts.magic == 0xF4BE0100 => black lightyellow
+color ts.magic == 0xF4BE0200 => black lightgreen
+color ts => white darkblue
+
+alias teamspeak.magic   => ts.magic
+alias teamspeak.command => ts.command

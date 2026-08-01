@@ -1,0 +1,59 @@
+# stomp.posa — Simple (or Streaming) Text Oriented Messaging Protocol
+#
+# STOMP is a text-framed protocol modelled on HTTP. A frame is:
+#   COMMAND\n
+#   header1:value1\n
+#   header2:value2\n
+#   \n
+#   body bytes
+#   \0
+#
+# Client commands: STOMP, CONNECT, SEND, SUBSCRIBE, UNSUBSCRIBE, ACK, NACK,
+#                  BEGIN, COMMIT, ABORT, DISCONNECT.
+# Server frames:   CONNECTED, MESSAGE, RECEIPT, ERROR.
+#
+# Reference: https://stomp.github.io/stomp-specification-1.2.html
+#
+# Runs on TCP port 61613 (ActiveMQ default), 61614 (WebSocket variant).
+
+Object<STOMP> STOMP_CLIENT
+    abbrev "stomp"
+    col "STOMP"
+    starts "STOMP\n" "CONNECT\n" "SEND\n" "SUBSCRIBE\n" "UNSUBSCRIBE\n"
+           "ACK\n" "NACK\n" "BEGIN\n" "COMMIT\n" "ABORT\n" "DISCONNECT\n"
+
+    string command until "\n" "Command"
+    kvblock headers sep ":" "Headers"
+    payload body "Body"
+
+    info "%s" command
+
+Object<STOMP> STOMP_SERVER
+    abbrev "stomp"
+    col "STOMP"
+    starts "CONNECTED\n" "MESSAGE\n" "RECEIPT\n" "ERROR\n"
+
+    string command until "\n" "Command"
+    kvblock headers sep ":" "Headers"
+    payload body "Body"
+
+    info "%s" command
+
+Object<GROUP> STOMP
+
+rule tcp.port == 61613 => STOMP
+rule tcp.port == 61614 => STOMP
+
+rule tcp.content "STOMP\n"     => STOMP
+rule tcp.content "CONNECT\n"   => STOMP
+rule tcp.content "CONNECTED\n" => STOMP
+rule tcp.content "SEND\n"      => STOMP
+rule tcp.content "MESSAGE\n"   => STOMP
+rule tcp.content "ERROR\n"     => STOMP
+
+color stomp.command == "MESSAGE"   => black lightgreen
+color stomp.command == "SEND"      => black lightyellow
+color stomp.command == "CONNECTED" => black lightblue
+color stomp.command == "ERROR"     => white red
+color stomp.command == "SUBSCRIBE" || stomp.command == "UNSUBSCRIBE" => black lightblue
+color stomp => white darkblue

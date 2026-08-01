@@ -1,0 +1,92 @@
+# zoom.posa — Zoom Video Conferencing UDP media protocol
+#
+# Zoom's UDP media stream uses two layered headers:
+#
+#   SFU Encapsulation (zoom_sfu_enc, 8 bytes) — identifies the packet class and
+#   direction in Zoom's Selective Forwarding Unit architecture.
+#
+#   ZME header (zoom_media_enc, ~15 bytes) — identifies the media type (audio,
+#   video, screen share, RTCP) with sequence and timestamp, followed by the
+#   actual RTP/RTCP payload.
+#
+# SFU type 5 packets carry a nested ZME header after the outer SFU header.
+# SFU types 1 and 2 are identified by the first three bytes [0x01/0x02, 0x00,
+# 0x02/0x03] with no ZME header.  Types 3 and 4 are heuristically detected.
+#
+# P2P calls (type 0x1F) skip the SFU header entirely and start with a ZME header.
+#
+# References:
+#   https://github.com/Princeton-Cabernet/zoom-analysis
+#   https://citizenlab.ca/2020/04/move-fast-roll-your-own-crypto-a-quick-look-at-the-confidentiality-of-zoom-meetings/
+#
+# Runs on UDP ports 8801–8810 (Zoom standard) plus peer-to-peer on ephemeral ports.
+
+Object<GROUP> ZOOM
+
+# ── SFU encapsulated packets (types 1–5, ports 8801-8810) ────────────────────
+Object<ZOOM> ZOOM_SFU
+    abbrev "zoom"
+    col "Zoom"
+    starts "\x01\x00\x02" "\x01\x00\x03" "\x02\x00\x02" "\x02\x00\x03"
+           "\x03" "\x04" "\x05"
+
+    uint8 sfu_type "SFU Type"
+        1 = "Client→SFU"
+        2 = "SFU→Client"
+        3 = "Zoom Type 3"
+        4 = "Zoom Type 4"
+        5 = "SFU with ZME"
+    uint16 sequence_num "Sequence Number"
+    uint32 unknown hex "Unknown"
+    uint8 direction "Direction"
+        0 = "To Zoom"
+        4 = "From Zoom"
+
+    when sfu_type == 5:
+        uint8 enc_type "Media Type"
+            13 = "Screen Share"
+            15 = "Audio (RTP)"
+            16 = "Video (RTP)"
+            30 = "P2P Screen Share"
+            33 = "RTCP"
+            34 = "RTCP"
+            35 = "RTCP"
+        uint32 unknown_1 hex "Unknown 1"
+        uint32 unknown_2 hex "Unknown 2"
+        uint16 media_seq "Media Sequence"
+        uint32 timestamp "Timestamp"
+        payload media_payload "Media Payload"
+    else:
+        payload payload "Payload"
+
+    info "Zoom SFU type=%u dir=%u" sfu_type, direction
+
+# ── P2P / ZME-only packets (type 0x1F, no SFU header) ────────────────────────
+Object<ZOOM> ZOOM_P2P
+    abbrev "zoom"
+    col "Zoom"
+    starts "\x1f\x02\x01"
+
+    uint8 enc_type "ZME Type"
+        0x1F = "P2P Connection Setup"
+    payload body "Body"
+
+    info "Zoom P2P"
+
+rule udp.port == 8801 => ZOOM
+rule udp.port == 8802 => ZOOM
+rule udp.port == 8803 => ZOOM
+rule udp.port == 8804 => ZOOM
+rule udp.port == 8805 => ZOOM
+
+rule udp.content "\x01\x00\x02" => ZOOM
+rule udp.content "\x01\x00\x03" => ZOOM
+rule udp.content "\x02\x00\x02" => ZOOM
+rule udp.content "\x02\x00\x03" => ZOOM
+rule udp.content "\x1f\x02\x01" => ZOOM
+
+color zoom.sfu_type == 15 => black lightblue
+color zoom.sfu_type == 16 => black lightgreen
+color zoom.sfu_type == 13 || zoom.sfu_type == 30 => black lightyellow
+color zoom.enc_type == 33 || zoom.enc_type == 34 || zoom.enc_type == 35 => black lightgray
+color zoom => white darkblue

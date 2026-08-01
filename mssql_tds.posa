@@ -1,0 +1,61 @@
+# mssql_tds.posa — Microsoft SQL Server Tabular Data Stream (TDS)
+#
+# TDS is the application-layer protocol used by Microsoft SQL Server (and its
+# clients: ODBC, JDBC, FreeTDS, etc.). Every TDS message begins with an 8-byte
+# header identifying the packet type, status, total length, channel, packet
+# number, and a reserved window byte (always 0x00).  The payload follows and
+# is parsed by the server or client according to the packet type.
+#
+# Reference: https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-tds
+#
+# Runs on TCP port 1433 (standard).
+
+Object<main> MSSQL_TDS
+    abbrev "tds"
+    col "MSSQL TDS"
+
+    uint8 type "Type"
+        1  = "SQL Batch"
+        2  = "Pre-TDS7 Login"
+        3  = "RPC"
+        4  = "Tabular Result"
+        6  = "Attention"
+        7  = "Bulk Load BCP"
+        8  = "Federated Authentication Token"
+        14 = "Transaction Manager Request"
+        15 = "TDS7 Login"
+        16 = "SSPI"
+        17 = "Pre-Login"
+        18 = "Pre-Login Response / Fed Auth Info"
+
+    uint8 status hex "Status"
+        0x00 = "Normal"
+        0x01 = "End of Message"
+        0x02 = "Ignore Event"
+        0x04 = "Reset Connection"
+        0x08 = "Reset Connection Skip Transaction"
+        0x10 = "Re-use Connection"
+
+    uint16 length "Total Length"
+    uint16 channel "Channel"
+    uint8 packet_number "Packet Number"
+    uint8 window "Window"
+
+    payload body "Body"
+
+    info "TDS type=%u len=%u pkt=%u" type, length, packet_number
+
+rule tcp.port == 1433 => MSSQL_TDS
+
+rule tcp.content "\x12\x01\x00" => MSSQL_TDS
+rule tcp.content "\x10\x01\x00" => MSSQL_TDS
+rule tcp.content "\x01\x01\x00" => MSSQL_TDS
+
+color tds.type == 15 || tds.type == 16 || tds.type == 17 => black lightyellow
+color tds.type == 4  => black lightgreen
+color tds.type == 6  => black lightyellow
+color tds.type == 14 => black lightblue
+color tds => white darkblue
+
+alias mssql.type   => tds.type
+alias mssql.status => tds.status

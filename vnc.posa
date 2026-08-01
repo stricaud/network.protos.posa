@@ -1,0 +1,44 @@
+# vnc.posa — VNC Remote Framebuffer Protocol (RFB)
+#
+# Both client and server open a VNC session by exchanging the same 12-byte
+# ASCII banner:
+#
+#   "RFB " (4 bytes) + major version (3 digits) + "." + minor version (3 digits) + LF
+#
+# After the banner exchange the server sends a list of supported security types
+# (or for RFB 3.3 a fixed uint32_be security type), the client picks one, and
+# authentication follows. The post-handshake stream is largely opaque.
+#
+# Common version strings: "RFB 003.003\n", "RFB 003.007\n", "RFB 003.008\n".
+#
+# Reference: https://www.rfc-editor.org/rfc/rfc6143 (RFB Protocol)
+#
+# Runs on TCP port 5900 (display 0), 5901 (display 1), etc.
+
+Object<main> VNC
+    abbrev "vnc"
+    col "VNC"
+
+    str<4> magic "Magic"
+    str<3> version_major "Version Major"
+    str<1> separator "Separator"
+    str<3> version_minor "Version Minor"
+    str<1> terminator "Terminator"
+
+    payload rest "Post-Banner Data"
+
+    info "RFB %s.%s" version_major, version_minor
+
+rule tcp.port == 5900 => VNC
+rule tcp.port == 5901 => VNC
+rule tcp.port == 5902 => VNC
+rule tcp.port == 5903 => VNC
+
+rule tcp.content "RFB 003.003\n" => VNC
+rule tcp.content "RFB 003.007\n" => VNC
+rule tcp.content "RFB 003.008\n" => VNC
+rule tcp.content "RFB 004.001\n" => VNC
+
+color vnc => black lightyellow
+
+alias rfb.version => vnc.version_major

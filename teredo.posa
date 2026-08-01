@@ -1,0 +1,77 @@
+# teredo.posa — Teredo IPv6-over-UDP Tunneling (RFC 4380)
+#
+# Teredo tunnels IPv6 packets inside UDP to allow IPv6 connectivity for hosts
+# behind IPv4 NAT devices. All Teredo traffic runs over UDP port 3544.
+#
+# There are three packet types, distinguished by the first two bytes:
+#
+# 1) IPv6 packet: starts with 0x60-0x6F (IPv6 version nibble = 6) in first byte
+#
+# 2) Teredo Authentication header (indicator = 0x0001):
+#   uint16  indicator    = 0x0001
+#   uint8   id_len       — length of client identifier
+#   uint8   au_len       — length of authentication value
+#   bytes[id_len] id     — client identifier
+#   bytes[au_len] au     — authentication value
+#   bytes<8> nonce       — 8-byte nonce
+#   uint8   confirmation — 0=OK, 1=failure
+#
+# 3) Teredo Origin Indication header (indicator = 0x0000):
+#   uint16  indicator    = 0x0000
+#   uint16  obfuscated_port — bitwise NOT of client port
+#   uint32  obfuscated_ip   — bitwise NOT of client IPv4 address
+#
+# Reference: RFC 4380, RFC 5991 (security updates)
+# Default UDP port: 3544
+
+Object<TEREDO> TEREDO_AUTH
+    abbrev "teredo"
+    col "Teredo"
+
+    uint16 indicator     hex "Indicator"
+        0x0001 = "Authentication"
+    uint8  id_len        "Client ID Length"
+    uint8  au_len        "Authentication Length"
+    bytes[id_len] client_id "Client Identifier"
+    bytes[au_len] auth_value "Authentication Value"
+    bytes<8> nonce       hex "Nonce"
+    uint8  confirmation  "Confirmation"
+        0 = "OK"
+        1 = "Failure"
+    payload ipv6_packet  "IPv6 Packet"
+
+    info "Teredo Auth confirm=%u" confirmation
+
+Object<TEREDO> TEREDO_ORIGIN
+    abbrev "teredo"
+    col "Teredo"
+
+    uint16 indicator     hex "Indicator"
+        0x0000 = "Origin Indication"
+    uint16 obf_port      hex "Obfuscated Port (NOT of client port)"
+    uint32 obf_addr      hex "Obfuscated Address (NOT of client IPv4)"
+    payload ipv6_packet  "IPv6 Packet"
+
+    info "Teredo Origin"
+
+Object<TEREDO> TEREDO_IPV6
+    abbrev "teredo"
+    col "Teredo"
+    starts "\x60" "\x61" "\x62" "\x63" "\x64" "\x65" "\x66" "\x67"
+           "\x68" "\x69" "\x6a" "\x6b" "\x6c" "\x6d" "\x6e" "\x6f"
+
+    bytes<1> version_tc hex "Version/Traffic Class"
+    payload ipv6_payload "IPv6 Packet"
+
+    info "Teredo encapsulated IPv6"
+
+Object<GROUP> TEREDO
+
+rule udp.port == 3544 => TEREDO
+
+rule udp.content "\x00\x01" => TEREDO
+rule udp.content "\x00\x00" => TEREDO
+
+color teredo.indicator == 0x0001 => black lightyellow
+color teredo.indicator == 0x0000 => black lightblue
+color teredo => white darkblue

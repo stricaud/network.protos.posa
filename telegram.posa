@@ -1,0 +1,46 @@
+# telegram.posa — Telegram MTProto
+#
+# Telegram's wire protocol (MTProto) cannot be decoded from packet content:
+#  - TCP transport: no fixed magic; Telegram uses obfuscation where the first
+#    56 bytes contain a 32-byte random key followed by an 8-byte magic check
+#    inside the encrypted envelope. Detection in nDPI is done by IP address only.
+#  - UDP transport: detection is a variable-position scan for a run of 0xFF bytes
+#    — no fixed offset, not expressible as a posa content rule.
+#
+# This file registers Telegram's datacenter IP blocks so that traffic to/from
+# those addresses is labeled as Telegram even without payload inspection.
+#
+# Telegram datacenter IPv4 blocks (official, as of 2024):
+#   149.154.160.0/20   — DCs 1-5 (main production cluster, Netherlands/USA)
+#   91.108.4.0/22      — DC1 / additional
+#   91.108.8.0/22      — DC2
+#   91.108.56.0/22     — DC4
+#   91.108.0.0/22      — alternative range
+#   91.105.192.0/23    — media servers
+#   185.76.151.0/24    — voice relays
+#   95.161.64.0/20     — Russia-specific DC
+#
+# In display filters, CIDR notation works directly:
+#   ip.addr == 149.154.160.0/20
+#   ip.addr in { 149.154.160.0/20 91.108.4.0/22 91.108.8.0/22 }
+#
+# Ports vary: TCP 80, 443, 5222 are all used. UDP uses dynamic ports.
+
+Object<main> TELEGRAM
+    abbrev "telegram"
+    col "Telegram"
+
+    payload data "MTProto Data (encrypted)"
+
+    info "Telegram MTProto (encrypted)"
+
+rule ip4.addr in 149.154.160.0/20 => TELEGRAM
+rule ip4.addr in 91.108.4.0/22    => TELEGRAM
+rule ip4.addr in 91.108.8.0/22    => TELEGRAM
+rule ip4.addr in 91.108.56.0/22   => TELEGRAM
+rule ip4.addr in 91.108.0.0/22    => TELEGRAM
+rule ip4.addr in 91.105.192.0/23  => TELEGRAM
+rule ip4.addr in 185.76.151.0/24  => TELEGRAM
+rule ip4.addr in 95.161.64.0/20   => TELEGRAM
+
+color telegram => white darkblue

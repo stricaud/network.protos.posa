@@ -1,0 +1,94 @@
+# openwire.posa — OpenWire (ActiveMQ native protocol)
+# TCP 61616. Reference: Apache ActiveMQ OpenWire Protocol spec.
+#
+# OpenWire uses a length-prefixed binary framing. The first packet from the
+# broker is a WIREFORMAT_INFO command (type 1) that negotiates protocol options.
+# TCP content "ActiveMQ" (as part of the WIREFORMAT_INFO payload identifying the
+# broker) is the most reliable detection anchor.
+#
+# Frame header:
+#   4  data_length   — big-endian, length of the remaining frame data
+#   1  data_type     — command type
+#   4  command_id
+#   1  response_required (boolean)
+#   4  correlation_id
+
+Lookup OpenWireCommandTypes
+    1   = "WIREFORMAT_INFO"
+    2   = "BROKER_INFO"
+    3   = "CONNECTION_INFO"
+    4   = "SESSION_INFO"
+    5   = "PRODUCER_INFO"
+    6   = "CONSUMER_INFO"
+    7   = "CONNECTION_ERROR"
+    8   = "CONSUMER_CONTROL"
+    9   = "CIRCUIT_BREAKER_INFO"
+    14  = "REMOVE_INFO"
+    15  = "CONTROL_COMMAND"
+    20  = "FLUSH_COMMAND"
+    21  = "KEEP_ALIVE_INFO"
+    22  = "SHUTDOWN_INFO"
+    23  = "REMOVE_SUBSCRIPTION_INFO"
+    24  = "COMMAND_NULL"
+    25  = "CONSUMER_DISPATCH"
+    26  = "FLUSH_COMMAND"
+    28  = "RESPONSE"
+    29  = "EXCEPTION_RESPONSE"
+    30  = "DATA_RESPONSE"
+    31  = "DATA_ARRAY_RESPONSE"
+    32  = "INT_RESPONSE"
+    33  = "STRING_RESPONSE"
+    34  = "BROKER_SUBSCRIPTIONS"
+    40  = "MESSAGE_DISPATCH"
+    41  = "MESSAGE_ACK"
+    42  = "PRODUCER_ACK"
+    43  = "MESSAGE_PULL"
+    61  = "XACOMMIT"
+    62  = "XAPREPARE"
+    63  = "XAROLLBACK"
+    72  = "ACTIVEMQ_MESSAGE"
+    73  = "ACTIVEMQ_BYTES_MESSAGE"
+    74  = "ACTIVEMQ_MAP_MESSAGE"
+    75  = "ACTIVEMQ_OBJECT_MESSAGE"
+    76  = "ACTIVEMQ_STREAM_MESSAGE"
+    77  = "ACTIVEMQ_TEXT_MESSAGE"
+    80  = "ACTIVEMQ_BLOB_MESSAGE"
+    90  = "TRANSACTION_INFO"
+    91  = "DESTINATION_INFO"
+    92  = "REMOVE_SUBSCRIPTION_INFO"
+    93  = "KEEP_ALIVE_INFO"
+    94  = "CONTROL_COMMAND"
+    95  = "FLUSH_COMMAND"
+    96  = "CONNECTION_CONTROL"
+    110 = "JOURNAL_QUEUE_ACK"
+    111 = "JOURNAL_TRACE"
+    112 = "JOURNAL_TRANSACTION"
+    113 = "DURABLE_SUBSCRIPTION_INFO"
+    114 = "PARTIAL_COMMAND"
+    115 = "PARTIAL_LAST_COMMAND"
+    116 = "REPLAY"
+
+Object<main> OpenWire
+    abbrev "openwire"
+    col "OpenWire"
+
+    required uint32 data_length         "Data Length"
+    required uint8  data_type lookup OpenWireCommandTypes "Command Type"
+    required uint32 command_id          "Command ID"
+    required uint8  response_required   "Response Required"
+        False = 0
+        True  = 1
+    required uint32 correlation_id      "Correlation ID"
+
+    payload body "Command Body"
+
+    info "OpenWire %s id=%u" data_type, command_id
+
+
+rule tcp.port == 61616 => OpenWire
+rule tcp.content "ActiveMQ" => OpenWire
+
+color openwire.data_type == 7  => white red
+color openwire.data_type == 1  => black lightyellow
+color openwire.data_type == 28 => black lightgreen
+color openwire                 => white darkblue

@@ -1,0 +1,49 @@
+# zeromq.posa — ZeroMQ Message Transport Protocol (ZMTP 3.x, RFC-level spec)
+# Reference: https://rfc.zeromq.org/spec/37/ (ZMTP 3.0)
+#            https://rfc.zeromq.org/spec/23/ (ZMTP 2.0)
+#
+# ZMTP 3.x greeting (64 bytes sent by both peers):
+#   [0]      0xFF               — signature byte
+#   [1-8]    0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00  (padding)
+#   [9]      0x7F               — signature byte (final)
+#   [10]     version_major      (3 for ZMTP 3.x)
+#   [11]     version_minor
+#   [12-31]  mechanism          (null-terminated string: "NULL", "PLAIN", "CURVE", "GSSAPI")
+#   [32]     as_server          (0 = client, 1 = server)
+#   [33-63]  filler (zeros)
+#
+# ZMTP 2.0 signature uses the same first 10 bytes but version byte is 2.
+
+Object<ZMTP> ZMTP3
+    abbrev "zmtp"
+    col "ZMTP"
+
+    required uint8  sig_ff = 0xFF    hex "Signature Start"
+    required bytes<8> padding        hex "Padding"
+    required uint8  sig_7f = 0x7F   hex "Signature End"
+    required uint8  version_major        "Version Major"
+        ZMTP_2 = 2
+        ZMTP_3 = 3
+    required uint8  version_minor        "Version Minor"
+    required bytes<20> mechanism         "Security Mechanism"
+    required uint8  as_server            "Role"
+        Client = 0
+        Server = 1
+    required bytes<31> filler        hex "Filler"
+
+    payload frames "Frames"
+
+    info "ZMTP %u.%u %s" version_major, version_minor, mechanism
+
+Object<GROUP> ZMTP
+
+# ZMTP magic is the same regardless of port
+rule tcp.content "\xff\x00\x00\x00\x00\x00\x00\x00\x00\x7f" => ZMTP
+
+# Common ZeroMQ ports (not standardized, but widely used defaults)
+rule tcp.port == 5555 => ZMTP
+rule tcp.port == 5556 => ZMTP
+
+color zmtp.as_server == 1 => black lightcyan
+color zmtp.as_server == 0 => black lightyellow
+color zmtp                => white darkblue

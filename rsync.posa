@@ -1,0 +1,53 @@
+# rsync.posa — rsync wire protocol (TCP 873)
+# Reference: https://rsync.samba.org/how-rsync-works.html
+#            https://github.com/WayneD/rsync (protocol.c)
+#
+# The rsync protocol begins with a plain-text greeting on both sides:
+#   Server sends: "@RSYNCD: <major>.<minor>\n"
+#   Client echoes: "@RSYNCD: <major>.<minor>\n"
+#   Client sends module name: "<module>\n" (empty for listing)
+#   Server sends: "@RSYNCD: OK\n" or "@RSYNCD: EXIT\n" or "@ERROR: ...\n"
+#
+# After the handshake the session switches to a binary protocol with
+# a variable-length multiplexed data stream (not decoded here — the
+# binary format is version-dependent and complex). We decode the handshake.
+
+Object<RSYNC> RSYNC_SERVER
+    abbrev "rsync"
+    col "rsync"
+    starts "@RSYNCD: "
+
+    string greeting until "\n" "Greeting"
+    info "%s" greeting
+
+Object<RSYNC> RSYNC_OK
+    abbrev "rsync"
+    col "rsync"
+    starts "@RSYNCD: OK"
+
+    string status until "\n" "Status"
+    info "%s" status
+
+Object<RSYNC> RSYNC_EXIT
+    abbrev "rsync"
+    col "rsync"
+    starts "@RSYNCD: EXIT"
+
+    string status until "\n" "Status"
+    info "%s" status
+
+Object<RSYNC> RSYNC_ERROR
+    abbrev "rsync"
+    col "rsync"
+    starts "@ERROR"
+
+    string error_msg until "\n" "Error"
+    info "%s" error_msg
+
+Object<GROUP> RSYNC
+
+rule tcp.port == 873 => RSYNC
+rule tcp.content "@RSYNCD:" => RSYNC
+
+color rsync.error_msg => white red
+color rsync           => black lightcyan

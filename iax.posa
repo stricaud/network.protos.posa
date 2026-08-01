@@ -1,0 +1,143 @@
+# iax.posa — IAX2 (Inter-Asterisk eXchange protocol v2, RFC 5456)
+# UDP 4569. IAX2 carries VoIP signaling and media in a unified binary stream.
+#
+# Two frame types:
+#   Full frames  — first bit = 1; 12-byte header; carry signaling
+#   Mini frames  — first bit = 0; 4-byte header; carry compressed audio
+#
+# Full frame header (12 bytes):
+#   bits[15:15] F       = 1 (full frame flag)
+#   bits[14:0]  src_call — source call number
+#   bits[15:15] R       = retransmit flag
+#   bits[14:0]  dst_call — destination call number
+#   uint32      timestamp (ms since session start)
+#   uint8       outbound_seqno
+#   uint8       inbound_seqno
+#   uint8       frame_type
+#   uint8       subclass (compressed uint: if & 0x80, value = 1 << (subclass & 0x3F))
+#
+# Mini frame header (4 bytes):
+#   bits[15:15] F       = 0 (mini frame flag)
+#   bits[14:0]  src_call
+#   uint16      timestamp (low 16 bits)
+
+Lookup IaxFrameTypes
+    1   = "DTMF"
+    2   = "Voice"
+    3   = "Video"
+    4   = "Control"
+    5   = "Null"
+    6   = "IAX"
+    7   = "Text"
+    8   = "Image"
+    9   = "HTML"
+    10  = "CNG"
+    11  = "Voice (modem passthrough)"
+    12  = "T38"
+
+Lookup IaxControlSubclass
+    1   = "Hangup"
+    2   = "Ring"
+    3   = "Ringing"
+    4   = "Answer"
+    5   = "Busy"
+    6   = "Tkoffhk"
+    7   = "Offhook"
+    8   = "Congestion"
+    9   = "Flash Hook"
+    10  = "Wink"
+    11  = "Option"
+    12  = "Key Radio"
+    13  = "Unkey Radio"
+    14  = "Call Progress"
+    15  = "Call Proceeding"
+    16  = "Hold"
+    17  = "Unhold"
+    18  = "Vidupdate"
+    19  = "T38 Progress"
+    20  = "Connected Line"
+    21  = "Redirecting"
+    22  = "CC Control"
+    23  = "Srcupdate"
+    24  = "Stop Sounds"
+
+Lookup IaxSubclass
+    1   = "NEW"
+    2   = "PING"
+    3   = "PONG"
+    4   = "ACK"
+    5   = "HANGUP"
+    6   = "REJECT"
+    7   = "ACCEPT"
+    8   = "AUTHREQ"
+    9   = "AUTHREP"
+    10  = "INVAL"
+    11  = "LAGRQ"
+    12  = "LAGRP"
+    13  = "REGREQ"
+    14  = "REGAUTH"
+    15  = "REGACK"
+    16  = "REGREJ"
+    17  = "REGREL"
+    18  = "VNAK"
+    19  = "DPREQ"
+    20  = "DPREP"
+    21  = "DIAL"
+    22  = "TXREQ"
+    23  = "TXCNT"
+    24  = "TXACC"
+    25  = "TXREADY"
+    26  = "TXREL"
+    27  = "TXREJ"
+    28  = "QUELCH"
+    29  = "UNQUELCH"
+    30  = "POKE"
+    31  = "MWI"
+    32  = "UNSUPPORT"
+    33  = "TRANSFER"
+    34  = "PROVISION"
+    35  = "FWDOWNL"
+    36  = "FWDATA"
+    37  = "TXMEDIA"
+    38  = "RTKEY"
+    39  = "CALLTOKEN"
+
+Object<IAX2> IAX2_FULL
+    abbrev "iax2"
+    col "IAX2"
+
+    required uint16 src_call  hex "Source Call (F=1)"
+    required uint16 dst_call  hex "Dest Call"
+    required uint32 timestamp     "Timestamp (ms)"
+    required uint8  oseqno        "Outbound Seq No"
+    required uint8  iseqno        "Inbound Seq No"
+    required uint8  frame_type lookup IaxFrameTypes "Frame Type"
+    required uint8  subclass      "Subclass"
+
+    when frame_type == 6:
+        payload ie_list "Information Elements"
+
+    else:
+        payload frame_data "Frame Data"
+
+    info "IAX2 %s" frame_type
+
+Object<IAX2> IAX2_MINI
+    abbrev "iax2"
+    col "IAX2"
+
+    required uint16 src_call  hex "Source Call (F=0)"
+    required uint16 mini_ts       "Mini Timestamp (ms low 16)"
+    payload  samples              "Voice Samples"
+
+    info "IAX2 mini voice"
+
+Object<GROUP> IAX2
+
+rule udp.port == 4569 => IAX2
+
+color iax2.frame_type == 5 => white red
+color iax2.frame_type == 6 => black lightyellow
+color iax2.frame_type == 2 => black lightblue
+color iax2.frame_type == 4 => black lightgreen
+color iax2                 => white darkblue

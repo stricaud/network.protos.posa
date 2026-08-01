@@ -19,11 +19,12 @@ Object<main> BGP
     required bytes<16> marker "Marker"
     required uint16    length "Length"
     required uint8     type   "Type"
-        OPEN          = 1
-        UPDATE        = 2
-        NOTIFICATION  = 3
-        KEEPALIVE     = 4
-        ROUTE_REFRESH = 5
+        OPEN                 = 1
+        UPDATE               = 2
+        NOTIFICATION         = 3
+        KEEPALIVE            = 4
+        ROUTE_REFRESH        = 5
+        ROUTE_REFRESH_CISCO  = 128
 
     # ── OPEN body (type == 1) ─────────────────────────────────────────────────
     # Carries the speaker's BGP version (always 4), its 2-byte AS number

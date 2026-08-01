@@ -1,0 +1,79 @@
+# drda.posa — DRDA (Distributed Relational Database Architecture)
+# Used by IBM DB2. TCP 50000 (default), also 446, 447.
+# Reference: Open Group DRDA v4 specification.
+#
+# DDM (Distributed Data Management) frame header (10 bytes):
+#   2  length       — total length including this header
+#   1  magic        = 0xD0 (DDM magic byte at offset 2? Actually bytes[4])
+#   1  format       — format flags
+#   2  correlid     — correlation ID
+#   2  length2      — same as length (echoed)
+#   2  codepoint    — the DDM command/reply code
+#
+# Note: Wireshark identifies DRDA by bytes[4] == 0xD0 (the 5th byte of the
+# DDM header is the "DSS Type and Chaining Bits" magic).
+
+Lookup DrdaCodepoints
+    0x1041 = "EXCSAT (Exchange Server Attributes)"
+    0x1403 = "ACCSEC (Access Security)"
+    0x14AC = "SECCHK (Security Check)"
+    0x107C = "ACCRDB (Access Relational Database)"
+    0x2001 = "EXCSATRD (Exchange Server Attributes Reply)"
+    0x14A3 = "ACCSECRD (Access Security Reply Data)"
+    0x1219 = "SECCHKRM (Security Check Reply)"
+    0x2004 = "ACCRDBRM (Access RDB Reply)"
+    0x1232 = "RDBACCRM (RDB Access Reply)"
+    0x220C = "EXCSQLIMM (Execute Immediate SQL)"
+    0x200A = "EXCSQLSTR (Execute SQL String)"
+    0x200B = "EXCSQLSET (Execute SQL Set)"
+    0x200F = "OPNQRY (Open Query)"
+    0x2417 = "OPNQRYRM (Open Query Reply)"
+    0x241D = "QRYDSC (Query Descriptor)"
+    0x241E = "QRYDTA (Query Data)"
+    0x2215 = "CLSQRY (Close Query)"
+    0x220A = "PRPSQLSTT (Prepare SQL Statement)"
+    0x2104 = "BGNBND (Begin Binding)"
+    0x2105 = "BNDSQLSTT (Bind SQL Statement)"
+    0x2113 = "ENDBND (End Binding)"
+    0x220D = "EXCSQLSTT (Execute SQL Statement)"
+    0x2202 = "CNTQRY (Continue Query)"
+    0x1232 = "RDBUPDRM (RDB Update Reply)"
+    0x2201 = "SQLERRRM (SQL Error Reply)"
+    0x2213 = "RSLSETRM (Result Set Reply)"
+    0x1403 = "SQLSTT (SQL Statement)"
+    0x2410 = "SQLSTTRD (SQL Statement Returned Data)"
+
+Object<main> DRDA
+    abbrev "drda"
+    col "DRDA"
+
+    required uint16 length      "DDM Length"
+    required uint8  magic = 0xD0 hex "Magic"
+    required uint8  format      hex "Format"
+
+    bits format chained   7 1 "Chained"
+    bits format continued 6 1 "Continued"
+    bits format dss_type  4 2 "DSS Type"
+        Request      = 1
+        Reply        = 2
+        Object       = 3
+        Correlation  = 4
+
+    required uint16 correlid    "Correlation ID"
+    required uint16 length2     "Length (echo)"
+    required uint16 codepoint lookup DrdaCodepoints "Codepoint"
+
+    payload body "DDM Object Data"
+
+    info "DRDA %s corr=%u" codepoint, correlid
+
+
+rule tcp.port == 50000 => DRDA
+rule tcp.port == 446   => DRDA
+rule tcp.port == 447   => DRDA
+# DDM magic byte at offset 4
+rule tcp.content@4 "\xd0" => DRDA
+
+color drda.dss_type == 2 => black lightgreen
+color drda.dss_type == 1 => black lightyellow
+color drda               => white darkblue

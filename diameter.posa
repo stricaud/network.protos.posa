@@ -1,0 +1,114 @@
+# diameter.posa — Diameter Base Protocol (RFC 6733, supersedes RFC 3588)
+# TCP 3868 (plain) / TCP 5658 (TLS) / SCTP 3868
+#
+# Fixed 20-byte header:
+#   1  version        = 1
+#   3  message_length (total packet length including header)
+#   1  flags          (R=request, P=proxyable, E=error, T=retransmit)
+#   3  command_code   (24-bit)
+#   4  application_id
+#   4  hop_by_hop_id
+#   4  end_to_end_id
+# Variable-length AVP list follows.
+
+Lookup DiameterCommandCodes
+    257  = "Capabilities-Exchange (CER/CEA)"
+    258  = "Re-Auth (RAR/RAA)"
+    260  = "Accounting (ACR/ACA)"
+    262  = "Abort-Session (ASR/ASA)"
+    264  = "Session-Termination (STR/STA)"
+    265  = "Event-Record (ACR/ACA)"
+    267  = "Disconnect-Peer (DPR/DPA)"
+    268  = "Diameter-EAP (DER/DEA)"
+    271  = "Accounting (Accounting-Request)"
+    272  = "Credit-Control (CCR/CCA)"
+    274  = "Abort-Session"
+    275  = "Session-Termination"
+    280  = "Device-Watchdog (DWR/DWA)"
+    282  = "Disconnect-Peer"
+    283  = "Capabilities-Update (CUR/CUA)"
+    300  = "User-Authorization (UAR/UAA)"
+    301  = "Server-Assignment (SAR/SAA)"
+    302  = "Location-Info (LIR/LIA)"
+    303  = "Multimedia-Auth (MAR/MAA)"
+    304  = "Registration-Termination (RTR/RTA)"
+    305  = "Push-Profile (PPR/PPA)"
+    306  = "User-Data (UDR/UDA)"
+    307  = "Profile-Update (PUR/PUA)"
+    308  = "Subscribe-Notifications (SNR/SNA)"
+    309  = "Push-Notification (PNR/PNA)"
+    310  = "Bootstrapping-Info (BIR/BIA)"
+    311  = "Message-Process-Notification (MPR/MPA)"
+    316  = "Update-Location (ULR/ULA)"
+    317  = "Cancel-Location (CLR/CLA)"
+    318  = "Authentication-Information (AIR/AIA)"
+    319  = "Insert-Subscriber-Data (IDR/IDA)"
+    320  = "Delete-Subscriber-Data (DSR/DSA)"
+    321  = "Purge-UE (PUR/PUA)"
+    322  = "Reset (RSR/RSA)"
+    323  = "Notify (NOR/NOA)"
+
+Lookup DiameterApplicationIds
+    0    = "Diameter Common Messages"
+    1    = "NASREQ"
+    2    = "Mobile IPv4"
+    3    = "Diameter Base Accounting"
+    4    = "Diameter Credit-Control"
+    5    = "Diameter EAP"
+    6    = "Diameter SIP"
+    7    = "Diameter Mobile IPv6 IKE"
+    8    = "Diameter Mobile IPv6 Auth"
+    9    = "Diameter QoS"
+    16777216 = "3GPP Cx"
+    16777217 = "3GPP Sh"
+    16777218 = "3GPP Re"
+    16777219 = "3GPP Wx"
+    16777220 = "3GPP Zn"
+    16777221 = "3GPP Zh"
+    16777222 = "3GPP Gq"
+    16777224 = "3GPP Gmb"
+    16777225 = "3GPP Gx"
+    16777226 = "3GPP Gx over Gy"
+    16777229 = "3GPP Rx"
+    16777231 = "3GPP S6a/S6d"
+    16777236 = "3GPP S13"
+    16777238 = "3GPP Rx"
+    16777252 = "3GPP S6b"
+    16777264 = "3GPP SWm"
+    16777265 = "3GPP SWx"
+    16777266 = "3GPP Gxx"
+    16777267 = "3GPP S9"
+    4294967295 = "Relay"
+
+Object<main> Diameter
+    abbrev "diameter"
+    col "Diameter"
+
+    required uint8  version "Version"
+    required uint24 message_length "Message Length"
+    required uint8  flags "Flags"
+
+    bits flags req        7 1 "Request"
+        Answer  = 0
+        Request = 1
+    bits flags proxyable  6 1 "Proxyable"
+    bits flags error      5 1 "Error"
+    bits flags retransmit 4 1 "Potentially Re-transmitted Message"
+
+    required uint24 command_code lookup DiameterCommandCodes "Command Code"
+    required uint32 application_id lookup DiameterApplicationIds "Application-ID"
+    required uint32 hop_by_hop_id  hex "Hop-by-Hop Identifier"
+    required uint32 end_to_end_id  hex "End-to-End Identifier"
+
+    payload avps "AVPs"
+
+    info "%s %s app=%u" command_code, req, application_id
+
+
+rule tcp.port == 3868 => Diameter
+rule tcp.port == 5658 => Diameter
+
+color diameter.flags & 0x20 == 0x20 => yellow red
+color diameter.req == 1             => black lightyellow
+color diameter.req == 0             => black lightgreen
+color diameter                      => white darkblue

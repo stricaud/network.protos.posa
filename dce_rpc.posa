@@ -1,0 +1,73 @@
+# dce_rpc.posa — DCE/RPC (Distributed Computing Environment / Remote Procedure Call)
+# RFC 1833, Microsoft MS-RPCE. TCP 135 (endpoint mapper), dynamic high ports.
+#
+# 16-byte fixed header:
+#   1  version       = 5
+#   1  minor_version (0 or 1)
+#   1  packet_type
+#   1  flags
+#   4  data_repr (byte order, char set, float format)
+#   2  frag_length
+#   2  auth_length
+#   4  call_id
+
+Object<main> DCE_RPC
+    abbrev "dcerpc"
+    col "DCE/RPC"
+
+    required uint8  version = 5       "Version"
+    required uint8  minor_version     "Minor Version"
+    required uint8  packet_type       "Packet Type"
+        REQUEST      = 0
+        PING         = 1
+        RESPONSE     = 2
+        FAULT        = 3
+        WORKING      = 4
+        NOCALL       = 5
+        REJECT       = 6
+        ACK          = 7
+        CL_CANCEL    = 8
+        FACK         = 9
+        CANCEL_ACK   = 10
+        BIND         = 11
+        BIND_ACK     = 12
+        BIND_NAK     = 13
+        ALTER_CONTEXT = 14
+        ALTER_CONTEXT_RESP = 15
+        AUTH3        = 16
+        SHUTDOWN     = 17
+        CO_CANCEL    = 18
+        ORPHANED     = 19
+    required uint8  flags             "Flags"
+
+    bits flags first_frag 0 1 "First Fragment"
+    bits flags last_frag  1 1 "Last Fragment"
+    bits flags cancel_pend 2 1 "Cancel Pending"
+    bits flags reserved   3 1 "Reserved"
+    bits flags multiplex  4 1 "Multiplex"
+    bits flags did_not_exec 5 1 "Did Not Execute"
+    bits flags maybe      6 1 "Maybe"
+    bits flags object_uuid 7 1 "Object UUID Present"
+
+    required bytes<4> data_repr     hex "Data Representation"
+    required le_uint16 frag_length      "Fragment Length"
+    required le_uint16 auth_length      "Auth Length"
+    required le_uint32 call_id      hex "Call ID"
+
+    payload body "Body"
+
+    info "DCE/RPC %s call=%u" packet_type, call_id
+
+
+# Endpoint mapper port
+rule tcp.port == 135 => DCE_RPC
+# Content signature: version=5, minor_version=0 or 1
+rule tcp.content "\x05\x00" => DCE_RPC
+rule tcp.content "\x05\x01" => DCE_RPC
+
+color dcerpc.packet_type == 2  => black lightgreen
+color dcerpc.packet_type == 3  => white red
+color dcerpc.packet_type == 13 => yellow red
+color dcerpc.packet_type == 0  => black lightyellow
+color dcerpc.packet_type == 11 => black lightyellow
+color dcerpc                   => white darkblue

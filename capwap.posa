@@ -1,0 +1,100 @@
+# capwap.posa — CAPWAP (Control And Provisioning of Wireless Access Points)
+# RFC 5415 (CAPWAP Base), RFC 5416 (CAPWAP/802.11 Binding)
+# UDP 5246 (control), UDP 5247 (data)
+#
+# CAPWAP preamble (1 byte):
+#   bits[7:4]  version   = 0
+#   bits[3:0]  type      — 0=CAPWAP, 1=CAPWAP-DTLS-Header
+#
+# CAPWAP header (variable):
+#   bits[31:27] hlen    — header length in 32-bit words
+#   bits[26:22] rid     — radio ID
+#   bits[21:16] wbid    — wireless binding ID (1=802.11, 2=EPCGlobal)
+#   bits[15]    T       — type (0=data, 1=control)
+#   bits[14]    F       — fragment
+#   bits[13]    L       — last fragment
+#   bits[12]    W       — wireless specific info present
+#   bits[11]    M       — radio MAC present
+#   bits[10]    K       — keep-alive
+#   bits[9:7]   flags
+#   bits[6:0]   reserved
+#   uint16      fragment_id
+#   bits[15:3]  fragment_offset (>> 3)
+#   bits[2:0]   reserved
+
+Lookup CapwapMessageTypes
+    1   = "Discovery Request"
+    2   = "Discovery Response"
+    3   = "Join Request"
+    4   = "Join Response"
+    5   = "Configuration Status Request"
+    6   = "Configuration Status Response"
+    7   = "Configuration Update Request"
+    8   = "Configuration Update Response"
+    9   = "WTP Event Request"
+    10  = "WTP Event Response"
+    11  = "Change State Event Request"
+    12  = "Change State Event Response"
+    13  = "Echo Request"
+    14  = "Echo Response"
+    15  = "Image Information Request"
+    16  = "Image Information Response"
+    17  = "Reset Request"
+    18  = "Reset Response"
+    19  = "Primary Discovery Request"
+    20  = "Primary Discovery Response"
+    21  = "Data Transfer Request"
+    22  = "Data Transfer Response"
+    23  = "Clear Configuration Request"
+    24  = "Clear Configuration Response"
+    25  = "Station Configuration Request"
+    26  = "Station Configuration Response"
+
+Object<main> CAPWAP
+    abbrev "capwap"
+    col "CAPWAP"
+
+    required uint8  preamble    hex "Preamble"
+    bits preamble version 4 4 "Version"
+    bits preamble type    0 4 "Type"
+        CAPWAP_Plain = 0
+        CAPWAP_DTLS  = 1
+
+    required uint32 capwap_header "CAPWAP Header"
+    bits capwap_header hlen  27 5 "Header Length (words)"
+    bits capwap_header rid   22 5 "Radio ID"
+    bits capwap_header wbid  16 6 "Wireless Binding ID"
+        IEEE_802_11 = 1
+        EPCGlobal   = 2
+    bits capwap_header T     15 1 "Type"
+        Data    = 0
+        Control = 1
+    bits capwap_header F     14 1 "Fragment"
+    bits capwap_header L     13 1 "Last Fragment"
+    bits capwap_header W     12 1 "Wireless Specific Info"
+    bits capwap_header M     11 1 "Radio MAC"
+    bits capwap_header K     10 1 "Keep-Alive"
+
+    required uint16 fragment_id "Fragment ID"
+    required uint16 fragment_offset_rsvd "Fragment Offset/Reserved"
+    bits fragment_offset_rsvd fragment_offset 3 13 "Fragment Offset"
+
+    when T == 1:
+        required uint32 msg_element_length "Control Header"
+        bits msg_element_length msg_type 16 16 "Message Type"
+            lookup CapwapMessageTypes
+        bits msg_element_length seq_num 8 8 "Sequence Number"
+        payload message_elements "Message Elements"
+
+    else:
+        payload data_payload "Data Payload"
+
+    info "CAPWAP %s" T
+
+
+rule udp.port == 5246 => CAPWAP
+rule udp.port == 5247 => CAPWAP
+
+color capwap.T == 0 => black lightblue
+color capwap.T == 1 => black lightyellow
+color capwap        => white darkblue

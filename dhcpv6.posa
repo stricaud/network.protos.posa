@@ -19,5 +19,19 @@ Object<main> DHCPv6
         LEASEQUERY   = 14
         LEASEQUERY_REPLY  = 15
         LEASEQUERY_DONE   = 16
-        LEASEQUERY_DATA   = 17
+        LEASEQUERY_DATA         = 17
+        ACTIVELEASEQUERY        = 18
+        STARTTLS                = 19
+        BNDUPD                  = 25
+        BNDREPLY                = 26
+        POOLREQ                 = 27
+        POOLRESP                = 28
+        UPDREQ                  = 29
+        UPDREQALL               = 30
+        UPDDONE                 = 31
+        CONNECT                 = 32
+        CONNECTREPLY            = 33
+        DISCONNECT              = 34
+        STATE                   = 36
+        CONTACT                 = 37
     required bytes<3> transaction_id

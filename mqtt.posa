@@ -56,6 +56,7 @@ Object<main> MQTT
         PINGREQ     = 12
         PINGRESP    = 13
         DISCONNECT  = 14
+        AUTH        = 15
 
     bits type_flags dup    3 1 "DUP Flag"
         Not Duplicate = 0

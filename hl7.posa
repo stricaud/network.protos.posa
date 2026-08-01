@@ -1,0 +1,37 @@
+# hl7.posa — HL7 v2.x MLLP (Minimal Lower Layer Protocol)
+# RFC-level: HL7 v2.6 Chapter 2, Appendix C (Lower Layer Protocol)
+# TCP 2575 (standard), also seen on 2576, 6661, 4000.
+#
+# MLLP framing:
+#   0x0B               — Start Block (VT, vertical tab)
+#   <HL7 message>      — HL7 v2.x pipe-delimited text
+#   0x1C               — End Block (FS, file separator)
+#   0x0D               — Carriage Return (mandatory after FS)
+#
+# The HL7 message itself starts with "MSH|^~\&|" (mandatory segment header).
+# Segments are \r-delimited; fields are |-delimited.
+# Common message types (MSH-9):
+#   ADT  — Admit/Discharge/Transfer
+#   ORM  — Order Message
+#   ORU  — Observation Result Unsolicited
+#   ACK  — Acknowledgement
+#   QRY  — Query
+#   RDE  — Pharmacy/Treatment Encoded Order
+
+Object<main> HL7_MLLP
+    abbrev "hl7"
+    col "HL7"
+
+    required uint8  start_block = 0x0B  hex "Start Block (VT)"
+    string  message until "\x1c"            "HL7 Message"
+    required uint8  end_block   = 0x1C  hex "End Block (FS)"
+    required uint8  cr          = 0x0D  hex "Carriage Return"
+
+    info "HL7 %s" message
+
+
+rule tcp.port == 2575 => HL7_MLLP
+rule tcp.port == 2576 => HL7_MLLP
+rule tcp.content "\x0bMSH" => HL7_MLLP
+
+color hl7 => black lightgreen

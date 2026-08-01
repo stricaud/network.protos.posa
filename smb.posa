@@ -314,11 +314,63 @@ Object<SMB> SMB1
 
     required uint32 protocol_id = 0xFF534D42 hex "Protocol ID"
     required uint8 smb_command "Command"
+        Create Directory   = 0x00
+        Delete Directory   = 0x01
+        Open               = 0x02
+        Create             = 0x03
+        Close              = 0x04
+        Flush              = 0x05
+        Delete             = 0x06
+        Rename             = 0x07
+        Query Information  = 0x08
+        Set Information    = 0x09
+        Read               = 0x0A
+        Write              = 0x0B
+        Lock Byte Range    = 0x0C
+        Unlock Byte Range  = 0x0D
+        Create Temp        = 0x0E
+        Check Directory    = 0x10
+        Process Exit       = 0x11
+        Seek               = 0x12
+        Lock And Read      = 0x13
+        Write And Unlock   = 0x14
+        Read Raw           = 0x1A
+        Write Raw          = 0x1D
+        Write Complete     = 0x20
+        Set Information2   = 0x22
+        Query Information2 = 0x23
+        Locking AndX       = 0x24
+        Transaction        = 0x25
+        Transaction Secondary = 0x26
+        Echo               = 0x2B
+        Open AndX          = 0x2D
+        Read AndX          = 0x2E
+        Write AndX         = 0x2F
+        Trans2             = 0x32
+        Trans2 Secondary   = 0x33
+        Find Close2        = 0x34
+        Find Notify Close  = 0x35
+        Tree Connect       = 0x70
+        Tree Disconnect    = 0x71
         Negotiate Protocol = 0x72
         Session Setup AndX = 0x73
-        Tree Connect AndX = 0x75
-        Trans2 = 0x32
-        Echo = 0x2b
+        Logoff AndX        = 0x74
+        Tree Connect AndX  = 0x75
+        Query Info Disk    = 0x80
+        Search             = 0x81
+        Find               = 0x82
+        Find Unique        = 0x83
+        Find Close         = 0x84
+        NT Transact        = 0xA0
+        NT Transact Secondary = 0xA1
+        NT Create AndX     = 0xA2
+        NT Cancel          = 0xA4
+        NT Rename          = 0xA5
+        Open Print File    = 0xC0
+        Write Print File   = 0xC1
+        Close Print File   = 0xC2
+        Get Print Queue    = 0xC3
+        No AndX Command    = 0xFF
     required le_uint32 nt_status "NT Status"
     required uint8 smb_flags "Flags"
     required le_uint16 smb_flags2 "Flags2"

@@ -15,6 +15,76 @@
 # Not covered (add it here, no rebuild): chunked transfer-encoding is shown as
 # the raw body, and the body is not decompressed.
 
+# ── HTTP status codes (IANA registry) ────────────────────────────────────────
+Lookup HttpStatusCodes
+    # 1xx Informational
+    "100" = "Continue"
+    "101" = "Switching Protocols"
+    "102" = "Processing"
+    "103" = "Early Hints"
+    # 2xx Success
+    "200" = "OK"
+    "201" = "Created"
+    "202" = "Accepted"
+    "203" = "Non-Authoritative Information"
+    "204" = "No Content"
+    "205" = "Reset Content"
+    "206" = "Partial Content"
+    "207" = "Multi-Status"
+    "208" = "Already Reported"
+    "226" = "IM Used"
+    # 3xx Redirection
+    "300" = "Multiple Choices"
+    "301" = "Moved Permanently"
+    "302" = "Found"
+    "303" = "See Other"
+    "304" = "Not Modified"
+    "305" = "Use Proxy"
+    "307" = "Temporary Redirect"
+    "308" = "Permanent Redirect"
+    # 4xx Client Error
+    "400" = "Bad Request"
+    "401" = "Unauthorized"
+    "402" = "Payment Required"
+    "403" = "Forbidden"
+    "404" = "Not Found"
+    "405" = "Method Not Allowed"
+    "406" = "Not Acceptable"
+    "407" = "Proxy Authentication Required"
+    "408" = "Request Timeout"
+    "409" = "Conflict"
+    "410" = "Gone"
+    "411" = "Length Required"
+    "412" = "Precondition Failed"
+    "413" = "Content Too Large"
+    "414" = "URI Too Long"
+    "415" = "Unsupported Media Type"
+    "416" = "Range Not Satisfiable"
+    "417" = "Expectation Failed"
+    "418" = "I'm a Teapot"
+    "421" = "Misdirected Request"
+    "422" = "Unprocessable Content"
+    "423" = "Locked"
+    "424" = "Failed Dependency"
+    "425" = "Too Early"
+    "426" = "Upgrade Required"
+    "428" = "Precondition Required"
+    "429" = "Too Many Requests"
+    "431" = "Request Header Fields Too Large"
+    "451" = "Unavailable For Legal Reasons"
+    # 5xx Server Error
+    "500" = "Internal Server Error"
+    "501" = "Not Implemented"
+    "502" = "Bad Gateway"
+    "503" = "Service Unavailable"
+    "504" = "Gateway Timeout"
+    "505" = "HTTP Version Not Supported"
+    "506" = "Variant Also Negotiates"
+    "507" = "Insufficient Storage"
+    "508" = "Loop Detected"
+    "510" = "Not Extended"
+    "511" = "Network Authentication Required"
+
 Object<HTTP> HTTP_RESPONSE
     abbrev "http"
     col "HTTP"
@@ -25,12 +95,9 @@ Object<HTTP> HTTP_RESPONSE
     required uint32 magic = 0x48545450 hex "Magic"
     seek 0
     required string version until " " "Version"
-    required string status_code until " " "Status Code"
+    required string status_code until " " lookup HttpStatusCodes "Status Code"
     required string reason until "\r\n" "Reason Phrase"
-    repeat until "\r\n" as header "Headers"
-        label "%s" line
-        required string line until "\r\n" "Header"
-    required string blank until "\r\n" "End of headers"
+    kvblock headers "Headers"
     required payload body "Body"
 
     info "%s %s" status_code, reason
@@ -47,10 +114,7 @@ Object<HTTP> HTTP_REQUEST
     required string method until " " "Method"
     required string uri until " " "Request URI"
     required string version until "\r\n" "Version"
-    repeat until "\r\n" as header "Headers"
-        label "%s" line
-        required string line until "\r\n" "Header"
-    required string blank until "\r\n" "End of headers"
+    kvblock headers "Headers"
     required payload body "Body"
 
     info "%s %s %s" method, uri, version

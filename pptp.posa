@@ -39,40 +39,52 @@ Object<main> PPTP
 
     info "%s" control_message_type
 
-# content rule (primary)
+# ── Content rule (primary — port-independent) ─────────────────────────────────
+# The magic cookie 0x1A2B3C4D is mandatory in every PPTP control message and
+# sits at a fixed byte offset of 4, making it a reliable content fingerprint.
+# This rule fires before the port rule so PPTP is recognised on any port.
+
 rule tcp.content@4 "\x1a\x2b\x3c\x4d" => PPTP
 
-# port rule (secondary)
+# ── Port rule (secondary — hint when content rule is insufficient) ────────────
+
 rule tcp.port == 1723 => PPTP
+
+# ── Wireshark-compatible aliases ──────────────────────────────────────────────
+# Map the Wireshark PPTP dissector field names to the abbrevs emitted above so
+# that display filters written for Wireshark continue to work unchanged.
 
 alias pptp.msg_type => pptp.control_message_type
 alias pptp.magic    => pptp.magic_cookie
 alias pptp.length   => pptp.length
 
-# setup (1,2): yellow
+# ── Coloring rules (most specific first) ──────────────────────────────────────
+
+# Connection setup — Start-Control-Connection Request (1) and Reply (2): yellow.
 color pptp.control_message_type == 1 => black lightyellow
 color pptp.control_message_type == 2 => black lightyellow
 
-# teardown (3,4,12,13): red
+# Connection teardown — Stop-Control-Connection (3, 4) and
+# Call-Clear / Call-Disconnect (12, 13): red.
 color pptp.control_message_type == 3  => white red
 color pptp.control_message_type == 4  => white red
 color pptp.control_message_type == 12 => white red
 color pptp.control_message_type == 13 => white red
 
-# data calls (7-11): green
+# Data call signalling — Outgoing-Call (7, 8), Incoming-Call (9, 10, 11): green.
 color pptp.control_message_type == 7  => black lightgreen
 color pptp.control_message_type == 8  => black lightgreen
 color pptp.control_message_type == 9  => black lightgreen
 color pptp.control_message_type == 10 => black lightgreen
 color pptp.control_message_type == 11 => black lightgreen
 
-# keepalive (5,6): gray
+# Keepalive — Echo-Request (5) and Echo-Reply (6): neutral gray.
 color pptp.control_message_type == 5  => black lightgray
 color pptp.control_message_type == 6  => black lightgray
 
-# WAN error (14): red; Set-Link-Info (15): gray
+# Error / management — WAN-Error-Notify (14): red; Set-Link-Info (15): gray.
 color pptp.control_message_type == 14 => white red
 color pptp.control_message_type == 15 => black lightgray
 
-# catch-all
+# Catch-all: any PPTP frame not matched above (e.g. unknown future message types).
 color pptp => white darkblue

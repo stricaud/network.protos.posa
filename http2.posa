@@ -2,18 +2,9 @@
 # Detection: client connection preface "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" (24 bytes) at TCP offset 0.
 # Frame format: 3-byte length + 1-byte type + 1-byte flags + 4-byte stream_id + payload.
 
-Object<main> HTTP2
-    abbrev "http2"
-    col "HTTP2"
-
-    required bytes<24> preface "Connection Preface"
-
-    repeat until end as frame "Frame"
-        include HTTP2Frame
-        label "%s stream=%u" type, stream_id
-
-    info "HTTP/2 %s stream=%u" type, stream_id
-
+# ── A single frame ───────────────────────────────────────────────────────────
+# Defined first because the frame loop below `include`s it: include resolves in
+# a single forward pass, so the object has to already exist at that point.
 Object HTTP2Frame
     required uint24 length "Frame Length"
     required uint8 type "Frame Type"
@@ -34,6 +25,20 @@ Object HTTP2Frame
     bits flags priority_bit 5 1 "Priority"
     required uint32 stream_id "Stream Identifier"
     required bytes[length] payload "Payload"
+
+# ── The connection ───────────────────────────────────────────────────────────
+# The client preface, then frames until the segment runs out.
+Object<main> HTTP2
+    abbrev "http2"
+    col "HTTP2"
+
+    required bytes<24> preface "Connection Preface"
+
+    repeat until end as frame "Frame"
+        include HTTP2Frame
+        label "%s stream=%u" type, stream_id
+
+    info "HTTP/2 %s stream=%u" type, stream_id
 
 # Content detection — primary, port-independent
 rule tcp.content "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" => HTTP2

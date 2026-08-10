@@ -118,7 +118,15 @@ Object<main> RTP
         required bytes[ext_length] ext_data "Extension Data"
 
     # ── Media payload ─────────────────────────────────────────────────────────────
-    required payload media_payload "Media Payload"
+    # Payload type 31 is the one video format RFC 3551 assigns a static number
+    # to and that has a decoder here, so it can be dispatched without SDP.
+    # Everything else — including H.264, H.265 and H.263+, which always use a
+    # dynamic type negotiated in SDP — is left as bytes; add a branch here with
+    # the negotiated number to decode those in a given capture.
+    when payload_type == 31:
+        layer h261 H261
+    else:
+        required payload media_payload "Media Payload"
 
     info "PT=%s Seq=%u SSRC=0x%x" payload_type, sequence_number, ssrc
 

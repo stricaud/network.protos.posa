@@ -1,73 +1,461 @@
-# dce_rpc.posa — DCE/RPC (Distributed Computing Environment / Remote Procedure Call)
-# RFC 1833, Microsoft MS-RPCE. TCP 135 (endpoint mapper), dynamic high ports.
+# dce_rpc.posa — DCE/RPC connection-oriented, as Microsoft MS-RPCE uses it
+# Reference: Open Group C706 (DCE 1.1: RPC) chapter 12; MS-RPCE
+# TCP 135 (endpoint mapper), TCP 593 (RPC over HTTP), and dynamic high ports;
+# also carried over SMB named pipes.
 #
-# 16-byte fixed header:
-#   1  version       = 5
-#   1  minor_version (0 or 1)
-#   1  packet_type
-#   1  flags
-#   4  data_repr (byte order, char set, float format)
-#   2  frag_length
-#   2  auth_length
-#   4  call_id
+# DCE/RPC is the transport for most of what one Windows machine asks another to
+# do: create a service (SVCCTL), read the registry (WINREG), schedule a task
+# (ATSVC), enumerate accounts (SAMR), replicate the directory (DRSUAPI). Which
+# of those a connection is for is *not* in the request — it is agreed once, in
+# the BIND, by interface UUID, and every later request refers to it only by a
+# small context id.
+#
+# That makes the BIND the packet worth reading, and it is decoded in full below,
+# interface UUID resolved to a name. See the Limits section for what a
+# per-connection decoder cannot do without carrying state across packets.
+#
+# Fixed 16-octet header on every PDU:
+#
+#   +-----+-------+------+-------+------------+---------+---------+---------+
+#   | ver | minor | type | flags | data repr 4| frag  2 | auth  2 | call  4 |
+#   +-----+-------+------+-------+------------+---------+---------+---------+
+#
+# Everything after the header is in the byte order the *sender* chose, declared
+# in data_repr. Little-endian is what Windows sends and what every field below
+# assumes; a big-endian peer (rare, and generally non-Windows) would need the
+# le_ types swapped. data_repr.byteorder is decoded so you can see which it is.
+
+# ── Interface UUIDs ───────────────────────────────────────────────────────────
+# Extracted from Wireshark's 134 packet-dcerpc-*.c dissectors, which is the only
+# complete list of these in one place.
+#
+# The `uuid` field type matters here rather than being cosmetic. These UUIDs are
+# deliberately near-identical — LSARPC is …789ab and SAMR is …789ac, while
+# SPOOLSS shares LSARPC's last eight bytes and differs only in the first four.
+# Keying on any single 32- or 64-bit slice would conflate at least two of
+# SAMR, LSARPC and SPOOLSS, so the whole 128-bit value is matched as text.
+Lookup DcerpcInterfaces
+    "00000000-0000-0000-0000-000000000000" = "RCG"
+    "003fd39c-7feb-1bbc-bebe-02608c2ef4d2" = "ICL_RPC - DCE DFS ICL RPC"
+    "019ee420-682d-11c9-a607-08002b0dea7a" = "DTSSTIME_REQ - DCE Distributed Time Service Local Server"
+    "0d7c1e50-113a-11ca-b71f-08001e01dc6c" = "SECIDMAP - DCE Security ID Mapper"
+    "0eff23e6-555a-11cd-95bf-0800092784c3" = "rs_prop_attr - DCE/RPC Prop Attr"
+    "12345678-1234-1234-1234-abcdef123456" = "MISC"
+    "12345678-1234-abcd-ef00-0123456789ab" = "SPOOLSS - Microsoft Spool Subsystem"
+    "12345678-1234-abcd-ef00-01234567cffb" = "RPC_NETLOGON - Microsoft Network Logon"
+    "12345778-1234-abcd-ef00-0123456789ab" = "LSARPC - Local Security Authority"
+    "12345778-1234-abcd-ef00-0123456789ac" = "SAMR"
+    "1544f5e0-613c-11d1-93df-00c04fd7bd09" = "RFR - Exchange 2003 Directory Request For Response"
+    "1d193c08-000b-11ca-ba1d-02608c2ea96e" = "DCE/RPC BUTC"
+    "1ff70682-0a51-30e8-076d-740be8cee98b" = "ATSVC - Microsoft AT-Scheduler Service"
+    "257df1c9-c6d3-11ca-8554-08002b1c8f1f" = "CDS_CLERK - CDS Clerk Server Calls"
+    "2f5f6520-ca46-1067-b319-00dd010662da" = "TAPI - Microsoft Telephony API Service"
+    "3139a0e2-68da-11cd-91c7-080009242444" = "rs_pwd_mgmt - DCE/RPC Registry Password Management"
+    "333a2276-0000-0000-0d00-00809c000000" = "DCE/RPC Conversation Manager"
+    "333b33c3-0000-0000-0d00-008784000000" = "llb - DCE/RPC NCS 1.5.1 Local Location Broker"
+    "338cd001-2244-31f1-aaaa-900038001003" = "WINREG - Remote Registry Service"
+    "361993c0-b000-0000-0d00-008784000000" = "DCE/RPC RS_UNIX"
+    "367abb81-9844-35f1-ad32-98f038001003" = "SVCCTL - Service Control"
+    "3919286a-b10c-11d0-9ba8-00c04fd92ef5" = "DSSETUP - Active Directory Setup"
+    "47b33331-8000-0000-0d00-01dc6c000000" = "rdaclif - DCE/RPC Directory Acl Interface"
+    "4885772c-c6d3-11ca-84c6-08002b1c8f1f" = "cprpc_server - DNS Control Program Server"
+    "4b324fc8-1670-01d3-1278-5a47bf6ee188" = "SRVSVC - Server Service"
+    "4c878280-2000-0000-0d00-028714000000" = "DCE/RPC RS_ACCT"
+    "4c878280-3000-0000-0d00-028714000000" = "RS_PGO - DCE Name Service"
+    "4c878280-4000-0000-0d00-028714000000" = "RS_PLCY - RS Interface properties"
+    "4c878280-5000-0000-0d00-028714000000" = "DCE/RPC RS_MISC"
+    "4d37f2dd-ed43-0000-02c0-37cf1e000001" = "BOSSVR - DCE DFS Basic Overseer Server"
+    "4d37f2dd-ed43-0000-02c0-37cf1e001000" = "dce_update - DCE/RPC UpServer"
+    "4d37f2dd-ed43-0000-02c0-37cf2e000001" = "FLDB - DCE DFS Fileset Location Server"
+    "4d37f2dd-ed43-0002-02c0-37cf1e000000" = "UBIKDISK - DCE DFS FLDB UBIK TRANSFER"
+    "4d37f2dd-ed43-0003-02c0-37cf1e000000" = "DCE DFS FLDB UBIKVOTE"
+    "4d37f2dd-ed43-0004-02c0-37cf1e000000" = "FTServer Operations"
+    "4d37f2dd-ed43-0005-02c0-37cf1e000000" = "REP_PROC - DCE DFS Replication Server"
+    "4d37f2dd-ed93-0000-02c0-37cf1e000000" = "FILEEXP - DCE DFS File Exporter"
+    "4d37f2dd-ed96-0000-02c0-37cf1e000000" = "TKN4Int - DCE DFS Token Server"
+    "4da1c422-943d-11d1-acae-00c04fc2aa3f" = "TRKSVR - Microsoft Distributed Link Tracking Server Service"
+    "4fc742e0-4a10-11cf-8273-00aa004ae673" = "NETDFS - Settings for Microsoft Distributed File System"
+    "50abc2a4-574d-40b3-9d66-ee4fd5fba076" = "DNSSERVER - DNS Server"
+    "591d87d0-de64-11ca-a11c-08001e0394c7" = "rs_prop_acl - DCE/RPC Registry server propagation interface - ACLs"
+    "5a7b91f8-ff00-11d0-a9b2-00c04fb6e6fc" = "Microsoft Messenger Service"
+    "5b8c2fa8-b60b-11c9-be0f-08001e018fa0" = "RS_REPADM - Registry server administration operations."
+    "5d978990-4851-11ca-9937-08001e039448" = "roverride - Remote Override interface"
+    "621dff68-3c39-4c6c-aae3-e68e2c6503ad" = "WZCSVC - Wireless Configuration Service"
+    "68097130-de43-11ca-a554-08001e0394c7" = "DCE/RPC RS_PROP_ACCT"
+    "6bffd098-a112-3610-9833-012892020162" = "RPC_BROWSER - RPC Browser"
+    "6bffd098-a112-3610-9833-46c3f87e345a" = "WKSSVC - Workstation Service"
+    "76f03f96-cdfd-44fc-a22c-64950a001209" = "IRemoteWinspool SubSystem"
+    "82273fdc-e32a-18c3-3f78-827929dc23ea" = "EVENTLOG - Event Logger"
+    "850446b0-e95b-11ca-ad90-08001e0145b1" = "RS_REPLIST - DCE/RPC Repserver Calls"
+    "86d35949-83c9-4044-b424-db363231fd0c" = "TaskSchedulerService - Microsoft Task Scheduler Service"
+    "885d85fb-c754-4062-a0e7-6872ce0064f4" = "MDSSVC - Spotlight metadata search service"
+    "894de0c0-0d55-11d3-a322-00c04fa321a1" = "INITSHUTDOWN - Init shutdown service"
+    "897e2e5f-93f3-4376-9c9c-fd2277495c27" = "FRSTRANS - File Replication Service DFS-R"
+    "8d9f4e40-a03d-11ce-8f69-08003e30051b" = "PNP - Microsoft Plug and Play service"
+    "8f09f000-b7ed-11ce-bbd2-00001a181cad" = "RRAS - Microsoft Routing and Remote Access Service"
+    "8f73de50-768c-11ca-bffc-08001e039431" = "KRB5RPC - DCE/RPC Kerberos V"
+    "9556dc99-828c-11cf-a37e-00aa003240c7" = "IWBEMSERVICES"
+    "9f6c78ef-fce5-42fa-abea-3e7df91921dc" = "IWBEMLOGINCLIENTIDEX"
+    "a35af600-9cf4-11cd-a076-08002b2bd711" = "SCARD_PACK"
+    "a4f1db00-ca47-1067-b31f-00dd010662da" = "MAPI"
+    "a71fc1e8-567f-11cb-98a0-08001e04de8c" = "RS_ATTR - Registry Server Attributes Manipulation Interface"
+    "a76e832a-10df-11cd-9056-080009242444" = "rsec_login - Remote sec_login preauth interface."
+    "a8e0653c-2744-4389-a61d-7373df8b2292" = "FSRVP - File Server Remote VSS Protocol"
+    "afa8bd80-7d8a-11c9-bef4-08002b102989" = "MGMT - DCE/RPC Remote Management"
+    "b1e338f8-9533-11c9-a34a-08001e019c1e" = "rpriv - Privilege Server operations"
+    "b47c9460-567f-11cb-8c09-08001e04de8c" = "rs_attr_schema - DCE/RPC Registry Server Attributes Schema"
+    "b62dc198-dfd4-11ca-948f-08001e02594c" = "rs_repmgr - DCE/RPC Operations between registry server replicas"
+    "b97db8b2-4c63-11cf-bff6-08002be23f2f" = "Failover Cluster Management API (clusapi)"
+    "bfca1238-628a-11c9-a073-08002b0dea7a" = "DTSPROVIDER - DCE Distributed Time Service Provider"
+    "c23626e8-de34-11ca-8cbc-08001e0394c7" = "rs_prop_pgo - DCE/RPC Registry server propagation interface - PGO items"
+    "c681d488-d850-11d0-8c52-00c04fd90f7e" = "EFS"
+    "ccd8c074-d0e5-4a40-92b4-d074faa6ba28" = "SMB Witness Service"
+    "d049b186-814f-11d1-9a3c-00c04fc9b232" = "FRSAPI - Microsoft File Replication Service API"
+    "d46113d0-a848-11cb-b863-08001e046aa5" = "DCE/RPC RS_BIND"
+    "d4781cd6-e5d3-44df-ad94-930efe48a887" = "IWBEMLOGINCLIENTID"
+    "d5579459-8bca-11ca-b771-08002b1c8f1f" = "cds_solicit - DCE/RPC CDS Solicitation"
+    "e1af8308-5d1f-11c9-91a4-08002b14a0fa" = "EPM - DCE/RPC Endpoint Mapper"
+    "e3514235-4b06-11d1-ab04-00c04fc2dcd2" = "DRSUAPI - Active Directory Replication"
+    "e6ac5cb8-de3e-11ca-9376-08001e0394c7" = "rs_prop_plcy - DCE/RPC Registry server propagation interface - properties and policies"
+    "eb814e2a-0099-11ca-8678-02608c2ea96e" = "DCE/DFS BUDB"
+    "f309ad18-d86a-11d0-a075-00c04fb68820" = "IWBEMLEVEL1LOGIN"
+    "f5cc59b4-4264-101a-8c59-08002b2f8426" = "FRSRPC - File Replication Service"
+    "f5cc5a18-4264-101a-8c59-08002b2f8426" = "NSPI - Exchange 5.5 Name Service Provider"
+
+# ── Transfer syntaxes ─────────────────────────────────────────────────────────
+# How the arguments are marshalled. NDR64 and the bind-time feature negotiation
+# UUID are MS-RPCE extensions; a client offering several lets the server pick.
+Lookup DcerpcTransferSyntaxes
+    "8a885d04-1ceb-11c9-9fe8-08002b104860" = "NDR32"
+    "71710533-beba-4937-8319-b5dbef9ccc36" = "NDR64"
+    "6cb71c2c-9812-4540-0300-000000000000" = "Bind Time Feature Negotiation"
+
+Lookup DcerpcAuthTypes
+    0   = "None"
+    1   = "Kerberos 5"
+    9   = "SPNEGO"
+    10  = "NTLMSSP"
+    14  = "SCHANNEL SSP"
+    16  = "Kerberos SSP"
+    17  = "Distributed Password Authentication SSP"
+    18  = "MSN SSP"
+    21  = "Digest SSP"
+    68  = "NETLOGON Secure Channel"
+    100 = "MSMQ SSP"
+
+# Only levels 5 and 6 sign or seal the stub data; 1-4 authenticate the bind and
+# then send every argument in clear.
+Lookup DcerpcAuthLevels
+    1 = "None"
+    2 = "Connect"
+    3 = "Call"
+    4 = "Packet"
+    5 = "Packet integrity"
+    6 = "Packet privacy"
+
+# ── One presentation context offered in a BIND ────────────────────────────────
+# Defined before the object that `include`s it: include resolves in a single
+# forward pass, so the object has to already exist at that point.
+Object DcerpcCtxItem
+    required le_uint16 ctx_id "Context ID"
+    required uint8 num_trans_items "Num Trans Items"
+    required uint8 ctx_reserved "Reserved"
+    # The interface the client wants to call, and which version of it.
+    required uuid abstract_syntax lookup DcerpcInterfaces "Abstract Syntax"
+    # Remember which interface this context id means, for the life of the flow.
+    # Every Request afterwards names the interface only by this number.
+    bind interface[ctx_id] = abstract_syntax
+    required le_uint16 if_ver "Interface Ver"
+    required le_uint16 if_ver_minor "Interface Ver Minor"
+    repeat num_trans_items as transfer "Transfer Syntaxes"
+        required uuid transfer_syntax lookup DcerpcTransferSyntaxes "Transfer Syntax"
+        required le_uint32 transfer_ver "Transfer Syntax Ver"
+        label "%s" transfer_syntax
 
 Object<main> DCE_RPC
     abbrev "dcerpc"
     col "DCE/RPC"
 
-    required uint8  version = 5       "Version"
-    required uint8  minor_version     "Minor Version"
-    required uint8  packet_type       "Packet Type"
-        REQUEST      = 0
-        PING         = 1
-        RESPONSE     = 2
-        FAULT        = 3
-        WORKING      = 4
-        NOCALL       = 5
-        REJECT       = 6
-        ACK          = 7
-        CL_CANCEL    = 8
-        FACK         = 9
-        CANCEL_ACK   = 10
-        BIND         = 11
-        BIND_ACK     = 12
-        BIND_NAK     = 13
-        ALTER_CONTEXT = 14
-        ALTER_CONTEXT_RESP = 15
-        AUTH3        = 16
-        SHUTDOWN     = 17
-        CO_CANCEL    = 18
-        ORPHANED     = 19
-    required uint8  flags             "Flags"
+    required uint8 version = 5 "Version"
+    required uint8 minor_version "Minor Version"
 
+    # Connection-oriented PDU types. The connectionless (UDP) form reuses 0, 2
+    # and 3 for request/response/fault but assigns 1 and 4-10 to its own
+    # ping/working/nocall/fack machinery; those are deliberately not listed
+    # here, because this decoder is bound to TCP.
+    required uint8 packet_type "Packet Type"
+        0  = "Request"
+        2  = "Response"
+        3  = "Fault"
+        11 = "Bind"
+        12 = "Bind_ack"
+        13 = "Bind_nak"
+        14 = "Alter_context"
+        15 = "Alter_context_resp"
+        16 = "AUTH3"
+        17 = "Shutdown"
+        18 = "Co_cancel"
+        19 = "Orphaned"
+        20 = "RPC-over-HTTP RTS"
+
+    required uint8 flags hex "Flags"
     bits flags first_frag 0 1 "First Fragment"
-    bits flags last_frag  1 1 "Last Fragment"
+    bits flags last_frag 1 1 "Last Fragment"
     bits flags cancel_pend 2 1 "Cancel Pending"
-    bits flags reserved   3 1 "Reserved"
-    bits flags multiplex  4 1 "Multiplex"
+    bits flags reserved 3 1 "Reserved"
+    bits flags multiplex 4 1 "Multiplex"
     bits flags did_not_exec 5 1 "Did Not Execute"
-    bits flags maybe      6 1 "Maybe"
+    bits flags maybe 6 1 "Maybe"
     bits flags object_uuid 7 1 "Object UUID Present"
 
-    required bytes<4> data_repr     hex "Data Representation"
-    required le_uint16 frag_length      "Fragment Length"
-    required le_uint16 auth_length      "Auth Length"
-    required le_uint32 call_id      hex "Call ID"
+    # Byte order for everything that follows, plus character and float encoding.
+    required uint8 drep0 hex "Data Representation"
+    bits drep0 byteorder 4 4 "Byte order"
+        0 = "Big-endian"
+        1 = "Little-endian"
+    bits drep0 character 0 4 "Character"
+        0 = "ASCII"
+        1 = "EBCDIC"
+    required uint8 drep_float "Float Representation"
+        0 = "IEEE"
+        1 = "VAX"
+        2 = "Cray"
+        3 = "IBM"
+    required uint16 drep_reserved hex "Reserved"
 
-    payload body "Body"
+    required le_uint16 frag_length "Fragment Length"
+    # Non-zero means an authentication trailer sits at the very end of the PDU.
+    required le_uint16 auth_length "Auth Length"
+    required le_uint32 call_id hex "Call ID"
 
-    info "DCE/RPC %s call=%u" packet_type, call_id
+    # ── Bind / Alter_context ──────────────────────────────────────────────────
+    # The packet that says what this connection is for. A client may offer
+    # several presentation contexts at once; each names an interface and the
+    # transfer syntaxes it can marshal with.
+    when packet_type == 11:
+        required le_uint16 max_xmit_frag "Max Xmit Frag"
+        required le_uint16 max_recv_frag "Max Recv Frag"
+        required le_uint32 assoc_group "Assoc Group"
+        required uint8 num_ctx_items "Num Ctx Items"
+        required bytes<3> bind_reserved "Reserved"
+        repeat num_ctx_items as ctx_item "Context Items"
+            include DcerpcCtxItem
+            label "Context %u: %s" ctx_id, abstract_syntax
+
+    when packet_type == 14:
+        required le_uint16 max_xmit_frag "Max Xmit Frag"
+        required le_uint16 max_recv_frag "Max Recv Frag"
+        required le_uint32 assoc_group "Assoc Group"
+        required uint8 num_ctx_items "Num Ctx Items"
+        required bytes<3> bind_reserved "Reserved"
+        repeat num_ctx_items as ctx_item "Context Items"
+            include DcerpcCtxItem
+            label "Context %u: %s" ctx_id, abstract_syntax
+
+    # ── Bind_ack / Alter_context_resp ─────────────────────────────────────────
+    # sec_addr is the named pipe the server wants to be called on. The result
+    # list that follows it is 4-byte aligned, and computing that padding needs
+    # arithmetic this grammar does not have — so the results are left as bytes
+    # rather than decoded from a guessed offset.
+    when packet_type == 12:
+        required le_uint16 max_xmit_frag "Max Xmit Frag"
+        required le_uint16 max_recv_frag "Max Recv Frag"
+        required le_uint32 assoc_group "Assoc Group"
+        required le_uint16 sec_addr_len "Scndry Addr Len"
+        required str[sec_addr_len] sec_addr "Scndry Addr"
+        # The result list starts on the next 4-byte boundary after sec_addr.
+        seek (offset + 3) & ~3
+        required uint8 num_results "Num Results"
+        required bytes<3> results_reserved "Reserved"
+        repeat num_results as result "Context Results"
+            required le_uint16 ack_result "Result"
+                0 = "Acceptance"
+                1 = "User rejection"
+                2 = "Provider rejection"
+                3 = "Negotiate ACK"
+            required le_uint16 ack_reason "Reason"
+                0 = "Reason not specified"
+                1 = "Abstract syntax not supported"
+                2 = "Proposed transfer syntaxes not supported"
+                3 = "Local limit exceeded"
+            required uuid ack_trans_id lookup DcerpcTransferSyntaxes "Transfer Syntax"
+            required le_uint32 ack_trans_ver "Transfer Syntax Ver"
+            label "%s" ack_result
+
+    when packet_type == 15:
+        required le_uint16 max_xmit_frag "Max Xmit Frag"
+        required le_uint16 max_recv_frag "Max Recv Frag"
+        required le_uint32 assoc_group "Assoc Group"
+        required le_uint16 sec_addr_len "Scndry Addr Len"
+        required str[sec_addr_len] sec_addr "Scndry Addr"
+        # The result list starts on the next 4-byte boundary after sec_addr.
+        seek (offset + 3) & ~3
+        required uint8 num_results "Num Results"
+        required bytes<3> results_reserved "Reserved"
+        repeat num_results as result "Context Results"
+            required le_uint16 ack_result "Result"
+                0 = "Acceptance"
+                1 = "User rejection"
+                2 = "Provider rejection"
+                3 = "Negotiate ACK"
+            required le_uint16 ack_reason "Reason"
+                0 = "Reason not specified"
+                1 = "Abstract syntax not supported"
+                2 = "Proposed transfer syntaxes not supported"
+                3 = "Local limit exceeded"
+            required uuid ack_trans_id lookup DcerpcTransferSyntaxes "Transfer Syntax"
+            required le_uint32 ack_trans_ver "Transfer Syntax Ver"
+            label "%s" ack_result
+
+    # ── Bind_nak ──────────────────────────────────────────────────────────────
+    # The bind was refused outright — no context was established.
+    when packet_type == 13:
+        required le_uint16 reject_reason "Reject Reason"
+            0 = "Reason not specified"
+            1 = "Temporary congestion"
+            2 = "Local limit exceeded"
+            3 = "Called paddr unknown"
+            4 = "Protocol version not supported"
+            5 = "Default context not supported"
+            6 = "User data not readable"
+            7 = "No PSAP available"
+            8 = "Authentication type not recognized"
+            9 = "Invalid checksum"
+        required uint8 num_protocols "Number of Protocols"
+        payload nak_versions "Supported Versions"
+
+    # ── Request ───────────────────────────────────────────────────────────────
+    # opnum selects the operation *within* the interface bound to ctx_id. What
+    # the pair means needs the BIND from earlier in the connection — see Limits.
+    when packet_type == 0:
+        required le_uint32 alloc_hint "Alloc hint"
+        required le_uint16 cn_ctx_id "Context ID"
+        required le_uint16 opnum "Opnum"
+        recall interface[cn_ctx_id] as iface lookup DcerpcInterfaces "Interface"
+        payload stub_data "Stub data"
+
+    # ── Response ──────────────────────────────────────────────────────────────
+    when packet_type == 2:
+        required le_uint32 alloc_hint "Alloc hint"
+        required le_uint16 cn_ctx_id "Context ID"
+        required uint8 cancel_count "Cancel count"
+        required uint8 resp_reserved "Reserved"
+        recall interface[cn_ctx_id] as iface lookup DcerpcInterfaces "Interface"
+        payload stub_data "Stub data"
+
+    # ── Fault ─────────────────────────────────────────────────────────────────
+    # status is the RPC-level error; a call rejected for access reasons shows up
+    # here rather than as a response.
+    when packet_type == 3:
+        required le_uint32 alloc_hint "Alloc hint"
+        required le_uint16 cn_ctx_id "Context ID"
+        required uint8 cancel_count "Cancel count"
+        required uint8 fault_reserved "Reserved"
+        recall interface[cn_ctx_id] as iface lookup DcerpcInterfaces "Interface"
+        required le_uint32 status hex "Status"
+            0x00000005 = "nca_s_fault_access_denied"
+            0x000006d3 = "nca_s_unk_if"
+            0x1c000001 = "nca_s_fault_other"
+            0x1c000006 = "nca_s_fault_addr_error"
+            0x1c00000d = "nca_s_fault_context_mismatch"
+            0x1c010002 = "nca_s_op_rng_error"
+            0x1c010003 = "nca_s_unk_if (op)"
+            0x1c010006 = "nca_s_wrong_boot_time"
+            0x1c01000b = "nca_s_proto_error"
+            0x1c010013 = "nca_s_out_args_too_big"
+            0x1c010014 = "nca_s_server_too_busy"
+        payload fault_stub "Fault stub data"
+
+    # ── AUTH3 and everything else ─────────────────────────────────────────────
+    else:
+        payload body "Body"
+
+    # ── Authentication trailer ────────────────────────────────────────────────
+    # Present on any PDU with auth_length > 0, and it sits at the very end:
+    # frag_length - auth_length - 8, the 8 being the trailer's own header.
+    # Reaching it needs arithmetic on two header fields, which is what the
+    # expression forms are for.
+    when auth_length >= 1:
+        seek frag_length - auth_length - 8
+        required uint8 auth_type lookup DcerpcAuthTypes "Auth type"
+        required uint8 auth_level lookup DcerpcAuthLevels "Auth level"
+        required uint8 auth_pad_len "Auth pad length"
+        required uint8 auth_rsrvd "Auth Rsrvd"
+        required le_uint32 auth_ctx_id hex "Auth Context ID"
+        required bytes[auth_length] auth_credentials "Auth Credentials"
+
+    info "DCE/RPC %s call=%u %s" packet_type, call_id, iface
 
 
-# Endpoint mapper port
-rule tcp.port == 135 => DCE_RPC
-# Content signature: version=5, minor_version=0 or 1
+# ── Limits ────────────────────────────────────────────────────────────────────
+# A Request names its interface only by context id, so `bind` remembers what the
+# BIND agreed and `recall` reads it back — keyed by the flow's Community ID, so
+# it holds for the life of the connection and does not leak between flows. A
+# capture that starts after the BIND has nothing to recall; the field says so
+# rather than guessing, and a warning is raised.
+#
+# The opnum is decoded but not named. Turning "SVCCTL opnum 12" into
+# "CreateServiceW" needs a per-interface operation table — 134 of them in
+# Wireshark — which is a body of data to add, not a missing capability.
+#
+# The stub data itself is NDR-marshalled and interface-specific. Decoding it is
+# not a matter of adding fields here.
+
+
+# ── Binding ───────────────────────────────────────────────────────────────────
+# 135 is the endpoint mapper; 593 is RPC over HTTP. Real interface traffic moves
+# to a dynamically assigned high port that the mapper hands out, so the content
+# rules matter more than the ports: every CO PDU starts with version 5 and a
+# minor version of 0 or 1.
 rule tcp.content "\x05\x00" => DCE_RPC
 rule tcp.content "\x05\x01" => DCE_RPC
+rule tcp.port == 135 => DCE_RPC
+rule tcp.port == 593 => DCE_RPC
 
-color dcerpc.packet_type == 2  => black lightgreen
-color dcerpc.packet_type == 3  => white red
+
+# ── Coloring Rules ────────────────────────────────────────────────────────────
+# Most specific first; first match wins.
+
+# Bind refused, or a call faulted — access denied lands here.
 color dcerpc.packet_type == 13 => yellow red
-color dcerpc.packet_type == 0  => black lightyellow
-color dcerpc.packet_type == 11 => black lightyellow
-color dcerpc                   => white darkblue
+color dcerpc.packet_type == 3 => white red
+
+# Binds: what the connection is being opened to do.
+color dcerpc.packet_type == 11 || dcerpc.packet_type == 14 => black lightyellow
+
+# Bind acknowledgements.
+color dcerpc.packet_type == 12 || dcerpc.packet_type == 15 => black lightgreen
+
+# Calls and their replies.
+color dcerpc.packet_type == 0 => black lightblue
+color dcerpc.packet_type == 2 => black lightcyan
+
+# Protocol catch-all.
+color dcerpc => white darkblue
+
+
+# ── Wireshark-Compatible Aliases ──────────────────────────────────────────────
+alias dcerpc.ver              => dcerpc.version
+alias dcerpc.ver_minor        => dcerpc.minor_version
+alias dcerpc.pkt_type         => dcerpc.packet_type
+alias dcerpc.cn_flags         => dcerpc.flags
+alias dcerpc.drep             => dcerpc.drep0
+alias dcerpc.drep.byteorder   => dcerpc.byteorder
+alias dcerpc.drep.character   => dcerpc.character
+alias dcerpc.cn_frag_len      => dcerpc.frag_length
+alias dcerpc.cn_auth_len      => dcerpc.auth_length
+alias dcerpc.cn_call_id       => dcerpc.call_id
+alias dcerpc.cn_max_xmit      => dcerpc.max_xmit_frag
+alias dcerpc.cn_max_recv      => dcerpc.max_recv_frag
+alias dcerpc.cn_assoc_group   => dcerpc.assoc_group
+alias dcerpc.cn_num_ctx_items => dcerpc.num_ctx_items
+alias dcerpc.cn_ctx_id        => dcerpc.cn_ctx_id
+alias dcerpc.cn_bind_if_id    => dcerpc.ctx_item.abstract_syntax
+alias dcerpc.cn_bind_trans_id => dcerpc.ctx_item.transfer.transfer_syntax
+alias dcerpc.cn_sec_addr_len  => dcerpc.sec_addr_len
+alias dcerpc.cn_sec_addr      => dcerpc.sec_addr
+alias dcerpc.cn_reject_reason => dcerpc.reject_reason
+alias dcerpc.cn_alloc_hint    => dcerpc.alloc_hint
+alias dcerpc.cn_cancel_count  => dcerpc.cancel_count
+alias dcerpc.cn_status        => dcerpc.status
+alias dcerpc.opnum            => dcerpc.opnum

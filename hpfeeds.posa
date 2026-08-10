@@ -1,0 +1,93 @@
+# hpfeeds.posa — HPFEEDS, the Honeynet Project's authenticated data feed
+# Reference: https://hpfeeds.org/wire-protocol — TCP, conventionally port 10000
+#
+# hpfeeds is the publish/subscribe bus honeypots use to ship what they catch to
+# a central broker: a honeypot authenticates, then publishes malware samples,
+# scan events and session transcripts onto named channels that analysis tools
+# subscribe to.
+#
+# Every PDU is length-prefixed, so a reader never has to scan for a delimiter:
+#
+#   +----------+--------+---------------------------+
+#   | msglen 4 | op 1   | opcode-specific body      |
+#   +----------+--------+---------------------------+
+#
+# msglen counts the whole PDU including these five octets.
+#
+# Authentication is challenge-response and never sends the shared key: the
+# broker's Info PDU carries a nonce, and the client's Auth PDU answers with
+# sha1(nonce + authkey).  A capture therefore shows the identity but not the
+# secret — the `secret` field below is that digest, not the key.
+
+Object<main> HPFeeds
+    abbrev "hpfeeds"
+    col "hpfeeds"
+
+    uint32 msglen "Message Length"
+    uint8 opcode "Opcode"
+        0 = "Error"
+        1 = "Info"
+        2 = "Auth"
+        3 = "Publish"
+        4 = "Subscribe"
+
+    # ── Error: broker rejecting something, as free text ───────────────────────
+    when opcode == 0:
+        payload errmsg "Error message"
+
+    # ── Info: broker greeting — its name and the auth challenge ───────────────
+    when opcode == 1:
+        uint8 server_len "Server length"
+        str[server_len] server "Server"
+        payload nonce "Nonce"
+
+    # ── Auth: client identity and sha1(nonce + authkey) ───────────────────────
+    when opcode == 2:
+        uint8 ident_len "Ident length"
+        str[ident_len] ident "Ident"
+        payload secret "Secret"
+
+    # ── Publish: identity, channel, then the published data ───────────────────
+    # This is the bulk of a live feed; the payload is whatever the honeypot
+    # decided to ship — often JSON, sometimes a raw binary sample.
+    when opcode == 3:
+        uint8 ident_len "Ident length"
+        str[ident_len] ident "Ident"
+        uint8 channel_len "Channel length"
+        str[channel_len] channel "Channel"
+        payload data "Payload"
+
+    # ── Subscribe: identity, then the channel being joined ────────────────────
+    when opcode == 4:
+        uint8 ident_len "Ident length"
+        str[ident_len] ident "Ident"
+        payload channel "Channel"
+
+    info "hpfeeds %s %s %s" opcode, ident, channel
+
+
+# ── Port Rule ─────────────────────────────────────────────────────────────────
+# hpfeeds has no IANA assignment; 10000 is the conventional broker port. There 
+# is no content signature to match on — the first octet of every PDU is the high 
+# byte of a length.
+rule tcp.port == 10000 => HPFeeds
+
+
+# ── Coloring Rules ────────────────────────────────────────────────────────────
+# Most specific first; first match wins.
+
+# Errors — a rejected auth or a bad subscribe; the reason a feed goes quiet.
+color hpfeeds.opcode == 0 => white red
+
+# Authentication exchange.
+color hpfeeds.opcode == 1 || hpfeeds.opcode == 2 => black lightyellow
+
+# Subscribe — a consumer joining a channel.
+color hpfeeds.opcode == 4 => black lightblue
+
+# Protocol catch-all — Publish, the steady-state traffic.
+color hpfeeds => black lightgreen
+
+
+# ── Wireshark-Compatible Aliases ──────────────────────────────────────────────
+alias hpfeeds.payload => hpfeeds.data

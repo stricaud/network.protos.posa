@@ -33,33 +33,33 @@ Object<main> OSPF
     col "OSPF"
 
     # ── Common header (bytes 0-13) ─────────────────────────────────────────
-    required uint8 version "Version"
+    uint8 version "Version"
         2 = "OSPFv2"
         3 = "OSPFv3"
 
-    required uint8 type "Packet Type"
+    uint8 type "Packet Type"
         1 = "Hello"
         2 = "Database Description"
         3 = "Link State Request"
         4 = "Link State Update"
         5 = "LS Acknowledgment"
 
-    required uint16 packet_length "Packet Length"
-    required ip4    router_id     "Router ID"
-    required ip4    area_id       "Area ID"
-    required uint16 checksum      "Checksum"
+    uint16 packet_length "Packet Length"
+    ip4    router_id     "Router ID"
+    ip4    area_id       "Area ID"
+    uint16 checksum      "Checksum"
 
     # ── Bytes 14-23: version-specific ─────────────────────────────────────
     when version == 2:
-        required uint16   au_type        "Auth Type"
+        uint16   au_type        "Auth Type"
             0 = "No Authentication"
             1 = "Simple Password"
             2 = "Cryptographic (MD5)"
-        required bytes<8> authentication "Authentication Data"
+        bytes<8> authentication "Authentication Data"
 
     when version == 3:
-        required uint8 instance_id "Instance ID"
-        required uint8 v3_reserved "Reserved"
+        uint8 instance_id "Instance ID"
+        uint8 v3_reserved "Reserved"
         # OSPFv3 relies on IPsec (AH/ESP) for authentication and encryption;
         # there is no per-packet authentication field in the OSPF header.
 
@@ -70,40 +70,40 @@ Object<main> OSPF
     # field; hello and dead intervals are 16-bit (not 32-bit as in OSPFv2).
     when type == 1:
         when version == 2:
-            required ip4    network_mask    "Network Mask"
-            required uint16 hello_interval  "Hello Interval (s)"
-            required uint8  options         "Options"
+            ip4    network_mask    "Network Mask"
+            uint16 hello_interval  "Hello Interval (s)"
+            uint8  options         "Options"
                 bits options e_bit  1 1 "E: External Routing Capability"
                 bits options mc_bit 2 1 "MC: Multicast Capability"
                 bits options np_bit 3 1 "N/P: NSSA Capability"
                 bits options ea_bit 4 1 "EA: External Attributes LSA"
                 bits options dc_bit 5 1 "DC: Demand Circuits"
                 bits options o_bit  6 1 "O: Opaque LSA Support"
-            required uint8  router_priority   "Router Priority"
-            required uint32 dead_interval     "Dead Interval (s)"
-            required ip4    designated_router "Designated Router"
-            required ip4    backup_dr         "Backup Designated Router"
+            uint8  router_priority   "Router Priority"
+            uint32 dead_interval     "Dead Interval (s)"
+            ip4    designated_router "Designated Router"
+            ip4    backup_dr         "Backup Designated Router"
             repeat until end as neighbor "Neighbours"
                 label "%s" neighbor_addr
-                required ip4 neighbor_addr "Neighbour Address"
+                ip4 neighbor_addr "Neighbour Address"
 
         when version == 3:
-            required uint32 hello_interface_id "Interface ID"
-            required uint8  router_priority    "Router Priority"
-            required uint24 v3_options         "Options"
+            uint32 hello_interface_id "Interface ID"
+            uint8  router_priority    "Router Priority"
+            uint24 v3_options         "Options"
                 bits v3_options v3_v6_bit 0 1 "V6: IPv6 Forwarding"
                 bits v3_options v3_e_bit  1 1 "E: External Routing Capability"
                 bits v3_options v3_mc_bit 2 1 "MC: Multicast Capability"
                 bits v3_options v3_np_bit 3 1 "N/P: NSSA Capability"
                 bits v3_options v3_dc_bit 5 1 "DC: Demand Circuits"
                 bits v3_options v3_r_bit  6 1 "R: Router Active"
-            required uint16 hello_interval    "Hello Interval (s)"
-            required uint16 dead_interval     "Dead Interval (s)"
-            required ip4    designated_router "Designated Router ID"
-            required ip4    backup_dr         "Backup Designated Router ID"
+            uint16 hello_interval    "Hello Interval (s)"
+            uint16 dead_interval     "Dead Interval (s)"
+            ip4    designated_router "Designated Router ID"
+            ip4    backup_dr         "Backup Designated Router ID"
             repeat until end as neighbor "Neighbours"
                 label "%s" neighbor_addr
-                required ip4 neighbor_addr "Neighbour Router ID"
+                ip4 neighbor_addr "Neighbour Router ID"
 
     # ── Type 2: Database Description (DBD) — topology exchange ────────────
     # Each DBD carries zero or more 20-byte LSA headers (no bodies) that let
@@ -112,18 +112,18 @@ Object<main> OSPF
     # OSPFv3 layout: Reserved(1) + Options(3) + MTU(2) + Reserved(1) + Flags(1) + Sequence(4) + LSA headers
     when type == 2:
         when version == 2:
-            required uint16 dbd_mtu      "Interface MTU"
-            required uint8  dbd_options  "Options"
-            required uint8  dbd_flags    "DBD Flags"
+            uint16 dbd_mtu      "Interface MTU"
+            uint8  dbd_options  "Options"
+            uint8  dbd_flags    "DBD Flags"
                 bits dbd_flags dbd_i  0 1 "I: Initial (first DBD in exchange)"
                 bits dbd_flags dbd_m  1 1 "M: More DBDs to follow"
                 bits dbd_flags dbd_ms 2 1 "MS: This router is Master"
-            required uint32 dbd_sequence "DD Sequence Number"
+            uint32 dbd_sequence "DD Sequence Number"
             repeat until end as dbd_lsa "LSA Headers"
                 label "%s" dbd_lsa_id
-                required uint16 dbd_lsa_age        "LS Age"
-                required uint8  dbd_lsa_options    "LS Options"
-                required uint8  dbd_lsa_type       "LS Type"
+                uint16 dbd_lsa_age        "LS Age"
+                uint8  dbd_lsa_options    "LS Options"
+                uint8  dbd_lsa_type       "LS Type"
                     1  = "Router-LSA"
                     2  = "Network-LSA"
                     3  = "Summary-LSA (IP network)"
@@ -133,26 +133,26 @@ Object<main> OSPF
                     9  = "Opaque-LSA (link-local scope)"
                     10 = "Opaque-LSA (area scope)"
                     11 = "Opaque-LSA (AS scope)"
-                required ip4    dbd_lsa_id         "Link State ID"
-                required ip4    dbd_lsa_adv_router "Advertising Router"
-                required uint32 dbd_lsa_seq        "LS Sequence Number"
-                required uint16 dbd_lsa_checksum   "LS Checksum"
-                required uint16 dbd_lsa_length     "LS Length"
+                ip4    dbd_lsa_id         "Link State ID"
+                ip4    dbd_lsa_adv_router "Advertising Router"
+                uint32 dbd_lsa_seq        "LS Sequence Number"
+                uint16 dbd_lsa_checksum   "LS Checksum"
+                uint16 dbd_lsa_length     "LS Length"
 
         when version == 3:
-            required uint8  v3_dbd_reserved  "Reserved"
-            required uint24 v3_dbd_options   "Options"
-            required uint16 dbd_mtu          "Interface MTU"
-            required uint8  v3_dbd_reserved2 "Reserved"
-            required uint8  dbd_flags        "DBD Flags"
+            uint8  v3_dbd_reserved  "Reserved"
+            uint24 v3_dbd_options   "Options"
+            uint16 dbd_mtu          "Interface MTU"
+            uint8  v3_dbd_reserved2 "Reserved"
+            uint8  dbd_flags        "DBD Flags"
                 bits dbd_flags dbd_i  0 1 "I: Initial (first DBD in exchange)"
                 bits dbd_flags dbd_m  1 1 "M: More DBDs to follow"
                 bits dbd_flags dbd_ms 2 1 "MS: This router is Master"
-            required uint32 dbd_sequence "DD Sequence Number"
+            uint32 dbd_sequence "DD Sequence Number"
             repeat until end as dbd_lsa "LSA Headers"
                 label "%s" dbd_lsa_id
-                required uint16 dbd_lsa_age        "LS Age"
-                required uint16 dbd_lsa_type       "LS Type"
+                uint16 dbd_lsa_age        "LS Age"
+                uint16 dbd_lsa_type       "LS Type"
                     0x2001 = "Router-LSA"
                     0x2002 = "Network-LSA"
                     0x2003 = "Inter-Area-Prefix-LSA"
@@ -161,11 +161,11 @@ Object<main> OSPF
                     0x2007 = "NSSA-LSA"
                     0x0008 = "Link-LSA"
                     0x2009 = "Intra-Area-Prefix-LSA"
-                required ip4    dbd_lsa_id         "Link State ID"
-                required ip4    dbd_lsa_adv_router "Advertising Router"
-                required uint32 dbd_lsa_seq        "LS Sequence Number"
-                required uint16 dbd_lsa_checksum   "LS Checksum"
-                required uint16 dbd_lsa_length     "LS Length"
+                ip4    dbd_lsa_id         "Link State ID"
+                ip4    dbd_lsa_adv_router "Advertising Router"
+                uint32 dbd_lsa_seq        "LS Sequence Number"
+                uint16 dbd_lsa_checksum   "LS Checksum"
+                uint16 dbd_lsa_length     "LS Length"
 
     # ── Type 3: Link State Request — soliciting LSAs from a neighbour ──────
     # Each 12-byte entry identifies one LSA the sender wants to receive.
@@ -174,9 +174,9 @@ Object<main> OSPF
     when type == 3:
         repeat until end as lsr "Link State Requests"
             label "%s" lsr_id
-            required uint32 lsr_type       "LS Type"
-            required ip4    lsr_id         "Link State ID"
-            required ip4    lsr_adv_router "Advertising Router"
+            uint32 lsr_type       "LS Type"
+            ip4    lsr_id         "Link State ID"
+            ip4    lsr_adv_router "Advertising Router"
 
     # ── Type 4: Link State Update — distributing LSAs ──────────────────────
     # A single LSU packet can carry multiple complete LSAs. Each LSA begins
@@ -185,13 +185,13 @@ Object<main> OSPF
     # body payload so the repeat cursor advances by exactly lsu_lsa_length
     # bytes per iteration regardless of LSA type.
     when type == 4:
-        required uint32 num_lsas "Number of LSAs"
+        uint32 num_lsas "Number of LSAs"
         repeat num_lsas as lsu_lsa "LSAs"
             label "%s" lsu_lsa_id
-            required uint16 lsu_lsa_age "LS Age"
+            uint16 lsu_lsa_age "LS Age"
             when version == 2:
-                required uint8 lsu_lsa_options "LS Options"
-                required uint8 lsu_lsa_type    "LS Type"
+                uint8 lsu_lsa_options "LS Options"
+                uint8 lsu_lsa_type    "LS Type"
                     1  = "Router-LSA"
                     2  = "Network-LSA"
                     3  = "Summary-LSA (IP network)"
@@ -202,7 +202,7 @@ Object<main> OSPF
                     10 = "Opaque-LSA (area scope)"
                     11 = "Opaque-LSA (AS scope)"
             when version == 3:
-                required uint16 lsu_lsa_type "LS Type"
+                uint16 lsu_lsa_type "LS Type"
                     0x2001 = "Router-LSA"
                     0x2002 = "Network-LSA"
                     0x2003 = "Inter-Area-Prefix-LSA"
@@ -211,13 +211,13 @@ Object<main> OSPF
                     0x2007 = "NSSA-LSA"
                     0x0008 = "Link-LSA"
                     0x2009 = "Intra-Area-Prefix-LSA"
-            required ip4    lsu_lsa_id         "Link State ID"
-            required ip4    lsu_lsa_adv_router "Advertising Router"
-            required uint32 lsu_lsa_seq        "LS Sequence Number"
-            required uint16 lsu_lsa_checksum   "LS Checksum"
-            required uint16 lsu_lsa_length     "LS Length"
+            ip4    lsu_lsa_id         "Link State ID"
+            ip4    lsu_lsa_adv_router "Advertising Router"
+            uint32 lsu_lsa_seq        "LS Sequence Number"
+            uint16 lsu_lsa_checksum   "LS Checksum"
+            uint16 lsu_lsa_length     "LS Length"
             scope lsu_lsa_length - 20
-                required payload lsu_lsa_body "LSA Body"
+                payload lsu_lsa_body "LSA Body"
 
     # ── Type 5: LS Acknowledgment — confirming receipt of LSAs ────────────
     # An LSACK carries one or more bare 20-byte LSA common headers with no
@@ -227,10 +227,10 @@ Object<main> OSPF
     when type == 5:
         repeat until end as lsack "Acknowledged LSAs"
             label "%s" lsack_lsa_id
-            required uint16 lsack_lsa_age "LS Age"
+            uint16 lsack_lsa_age "LS Age"
             when version == 2:
-                required uint8 lsack_lsa_options "LS Options"
-                required uint8 lsack_lsa_type    "LS Type"
+                uint8 lsack_lsa_options "LS Options"
+                uint8 lsack_lsa_type    "LS Type"
                     1  = "Router-LSA"
                     2  = "Network-LSA"
                     3  = "Summary-LSA (IP network)"
@@ -241,7 +241,7 @@ Object<main> OSPF
                     10 = "Opaque-LSA (area scope)"
                     11 = "Opaque-LSA (AS scope)"
             when version == 3:
-                required uint16 lsack_lsa_type "LS Type"
+                uint16 lsack_lsa_type "LS Type"
                     0x2001 = "Router-LSA"
                     0x2002 = "Network-LSA"
                     0x2003 = "Inter-Area-Prefix-LSA"
@@ -250,11 +250,11 @@ Object<main> OSPF
                     0x2007 = "NSSA-LSA"
                     0x0008 = "Link-LSA"
                     0x2009 = "Intra-Area-Prefix-LSA"
-            required ip4    lsack_lsa_id         "Link State ID"
-            required ip4    lsack_lsa_adv_router "Advertising Router"
-            required uint32 lsack_lsa_seq        "LS Sequence Number"
-            required uint16 lsack_lsa_checksum   "LS Checksum"
-            required uint16 lsack_lsa_length     "LS Length"
+            ip4    lsack_lsa_id         "Link State ID"
+            ip4    lsack_lsa_adv_router "Advertising Router"
+            uint32 lsack_lsa_seq        "LS Sequence Number"
+            uint16 lsack_lsa_checksum   "LS Checksum"
+            uint16 lsack_lsa_length     "LS Length"
 
     info "%s  Router=%s  Area=%s" type, router_id, area_id
 
@@ -265,17 +265,17 @@ Object<main> OSPF
 # traffic and allows OSPF to be recognised inside tunnels or raw captures.
 #
 # OSPFv2 (version byte 0x02):
-rule content "\x02\x01" => OSPF
-rule content "\x02\x02" => OSPF
-rule content "\x02\x03" => OSPF
-rule content "\x02\x04" => OSPF
-rule content "\x02\x05" => OSPF
+weak rule content "\x02\x01" => OSPF
+weak rule content "\x02\x02" => OSPF
+weak rule content "\x02\x03" => OSPF
+weak rule content "\x02\x04" => OSPF
+weak rule content "\x02\x05" => OSPF
 # OSPFv3 (version byte 0x03):
-rule content "\x03\x01" => OSPF
-rule content "\x03\x02" => OSPF
-rule content "\x03\x03" => OSPF
-rule content "\x03\x04" => OSPF
-rule content "\x03\x05" => OSPF
+weak rule content "\x03\x01" => OSPF
+weak rule content "\x03\x02" => OSPF
+weak rule content "\x03\x03" => OSPF
+weak rule content "\x03\x04" => OSPF
+weak rule content "\x03\x05" => OSPF
 
 # ── Protocol binding (secondary — canonical IP protocol number) ───────────────
 # Note: ip.proto == 89 is also declared in 00-builtin-rules.posa for the

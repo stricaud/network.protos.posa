@@ -13,12 +13,12 @@ Object<main> PPTP
     abbrev "pptp"
     col "PPTP"
 
-    required uint16 length               "Length"
-    required uint16 pptp_message_type    "PPTP Message Type"
+    uint16 length               "Length"
+    uint16 pptp_message_type    "PPTP Message Type"
         Control    = 1
         Management = 2
-    required uint32 magic_cookie = 0x1A2B3C4D hex "Magic Cookie"
-    required uint16 control_message_type "Control Message Type"
+    uint32 magic_cookie = 0x1A2B3C4D hex "Magic Cookie"
+    uint16 control_message_type "Control Message Type"
         Start-Control-Connection-Request = 1
         Start-Control-Connection-Reply   = 2
         Stop-Control-Connection-Request  = 3
@@ -34,7 +34,7 @@ Object<main> PPTP
         Call-Disconnect-Notify           = 13
         WAN-Error-Notify                 = 14
         Set-Link-Info                    = 15
-    required uint16 reserved             "Reserved"
+    uint16 reserved             "Reserved"
     payload
 
     info "%s" control_message_type

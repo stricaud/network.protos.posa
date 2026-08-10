@@ -3,9 +3,9 @@
 # next_header uses the same protocol numbers as IPv4 proto field.
 # src and dst are 16-byte big-endian addresses.
 Object<main> IPv6
-    required uint32    ver_tc_fl = 0x60000000
-    required uint16    payload_len = 0
-    required uint8     next_header = 59
+    uint32    ver_tc_fl = 0x60000000
+    uint16    payload_len = 0
+    uint8     next_header = 59
         HOPBYHOP = 0
         ICMP     = 1
         TCP      = 6
@@ -18,6 +18,6 @@ Object<main> IPv6
         NONEXT   = 59
         DSTOPTS  = 60
         SCTP     = 132
-    required uint8     hop_limit = 64
-    required bytes<16> src
-    required bytes<16> dst
+    uint8     hop_limit = 64
+    bytes<16> src
+    bytes<16> dst

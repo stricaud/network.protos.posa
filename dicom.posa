@@ -9,7 +9,7 @@ Object<main> DICOM
     abbrev "dicom"
     col "DICOM"
 
-    required uint8  pdu_type        "PDU Type"
+    uint8  pdu_type        "PDU Type"
         A_ASSOCIATE_RQ  = 0x01
         A_ASSOCIATE_AC  = 0x02
         A_ASSOCIATE_RJ  = 0x03
@@ -17,37 +17,37 @@ Object<main> DICOM
         A_RELEASE_RQ    = 0x05
         A_RELEASE_RP    = 0x06
         A_ABORT         = 0x07
-    required uint8  reserved        "Reserved"
-    required uint32 pdu_length      "PDU Length"
+    uint8  reserved        "Reserved"
+    uint32 pdu_length      "PDU Length"
 
     # A-ASSOCIATE-RQ / A-ASSOCIATE-AC
     when pdu_type == 0x01:
-        required uint16 protocol_version hex "Protocol Version"
-        required uint16 reserved2
-        required bytes<16> called_ae    "Called AE Title"
-        required bytes<16> calling_ae   "Calling AE Title"
-        required bytes<32> reserved3
+        uint16 protocol_version hex "Protocol Version"
+        uint16 reserved2
+        bytes<16> called_ae    "Called AE Title"
+        bytes<16> calling_ae   "Calling AE Title"
+        bytes<32> reserved3
         payload  variable_items        "Variable Items"
 
     when pdu_type == 0x02:
-        required uint16 protocol_version hex "Protocol Version"
-        required uint16 reserved2
-        required bytes<16> called_ae    "Called AE Title"
-        required bytes<16> calling_ae   "Calling AE Title"
-        required bytes<32> reserved3
+        uint16 protocol_version hex "Protocol Version"
+        uint16 reserved2
+        bytes<16> called_ae    "Called AE Title"
+        bytes<16> calling_ae   "Calling AE Title"
+        bytes<32> reserved3
         payload  variable_items        "Variable Items"
 
     # A-ASSOCIATE-RJ
     when pdu_type == 0x03:
-        required uint8  reserved2
-        required uint8  result          "Result"
+        uint8  reserved2
+        uint8  result          "Result"
             Rejected_Permanent = 1
             Rejected_Transient = 2
-        required uint8  source          "Source"
+        uint8  source          "Source"
             DICOM_UL_Service_User     = 1
             DICOM_UL_Service_Provider = 2
             DICOM_UL_Service_Provider_Acse = 3
-        required uint8  reason          "Reason/Diag"
+        uint8  reason          "Reason/Diag"
 
     # P-DATA-TF
     when pdu_type == 0x04:
@@ -55,12 +55,12 @@ Object<main> DICOM
 
     # A-ABORT
     when pdu_type == 0x07:
-        required uint8  reserved2
-        required uint8  reserved3
-        required uint8  source          "Source"
+        uint8  reserved2
+        uint8  reserved3
+        uint8  source          "Source"
             Service_User     = 0
             Service_Provider = 2
-        required uint8  reason          "Reason/Diag"
+        uint8  reason          "Reason/Diag"
 
     else:
         payload body "Body"
@@ -72,7 +72,7 @@ rule tcp.port == 104   => DICOM
 rule tcp.port == 11112 => DICOM
 
 # A-ASSOCIATE-RQ is always the first PDU; version bytes 0x01 0x00 follow
-rule tcp.content "\x01\x00" => DICOM
+weak rule tcp.content "\x01\x00" => DICOM
 
 color dicom.pdu_type == 0x03 => white red
 color dicom.pdu_type == 0x07 => white red

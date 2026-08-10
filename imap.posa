@@ -103,25 +103,25 @@ Object<main> IMAP
     # Tagged lines have a variable-length client-chosen tag ("A001", "1", etc.)
     # so there is no fixed prefix to dispatch on; the when/else chain below
     # handles all three variants after reading this shared token.
-    required string tag until " " "Tag"
+    string tag until " " "Tag"
 
     when tag == "*":
         # Untagged server response: "* KEYWORD data\r\n"
         # When a decimal sequence number precedes the keyword (EXISTS, RECENT,
         # EXPUNGE, FETCH), `keyword` holds the number and `data` holds the rest.
-        required string keyword until " \r" lookup ImapServerKeywords "Keyword / Seq"
-        required string data until "\r\n" "Response Data"
+        string keyword until " \r" lookup ImapServerKeywords "Keyword / Seq"
+        string data until "\r\n" "Response Data"
     else:
         when tag == "+":
             # Server continuation request: "+ text\r\n"
             # Server is waiting for a client literal or the next AUTHENTICATE exchange.
-            required string continuation until "\r\n" "Continuation Text"
+            string continuation until "\r\n" "Continuation Text"
         else:
             # Tagged line: "A001 COMMAND-OR-STATUS args\r\n"
             # The `until " \r"` delimiter set lets the field terminate at a space
             # (command with arguments) or at CR (command with no arguments, e.g. NOOP).
-            required string command until " \r" lookup ImapCommands "Command"
-            required string arguments until "\r\n" "Arguments"
+            string command until " \r" lookup ImapCommands "Command"
+            string arguments until "\r\n" "Arguments"
 
     # info: missing fields collapse — each branch produces a tidy summary:
     #   untagged   "* OK [CAPABILITY IMAP4rev1] Dovecot ready"
@@ -142,7 +142,7 @@ rule tcp.content "* BYE"     => IMAP
 rule tcp.content "* NO"      => IMAP
 rule tcp.content "* BAD"     => IMAP
 rule tcp.content "* PREAUTH" => IMAP
-rule tcp.content "+ "        => IMAP
+weak rule tcp.content "+ "        => IMAP
 rule tcp.content "A001 "     => IMAP
 
 # ── Port bindings (secondary — used when content rules did not match) ─────────

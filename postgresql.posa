@@ -25,8 +25,8 @@ Object<PostgreSQL> Startup
     col "PGSQL"
     starts "\x00\x00"
 
-    required uint32 startup_length "Message Length"
-    required uint32 protocol "Protocol Version"
+    uint32 startup_length "Message Length"
+    uint32 protocol "Protocol Version"
         PostgreSQL v3 = 0x00030000
         SSL Request = 0x04D2162F
         GSS Enc Request = 0x04D21630
@@ -36,8 +36,8 @@ Object<PostgreSQL> Startup
     when protocol == 0x00030000:
         repeat until "\x00" as startup_param "Startup Parameters"
             label "%s=%s" param_key, param_value
-            required cstring param_key "Parameter Name"
-            required cstring param_value "Parameter Value"
+            cstring param_key "Parameter Name"
+            cstring param_value "Parameter Value"
 
     info "Startup 0x%x" protocol
 
@@ -51,7 +51,7 @@ Object<PostgreSQL> Message
     abbrev "postgresql"
     col "PGSQL"
 
-    required uint8 msg_type "Message Type"
+    uint8 msg_type "Message Type"
         # Server → Client
         Authentication = 82          # 'R'
         ParameterStatus = 83         # 'S'  (conflicts with client Sync, server wins here)
@@ -87,11 +87,11 @@ Object<PostgreSQL> Message
         CopyDone = 99                # 'c'
         CopyFail = 102               # 'f'
 
-    required uint32 msg_length "Message Length"
+    uint32 msg_length "Message Length"
 
     # ── Authentication request (server → client, msg_type == 'R' == 82) ──────────────
     when msg_type == 82:
-        required uint32 auth_type "Authentication Type"
+        uint32 auth_type "Authentication Type"
             Authentication OK = 0
             Kerberos V5 = 2
             Cleartext Password = 3
@@ -107,28 +107,28 @@ Object<PostgreSQL> Message
 
     # ── ReadyForQuery (server → client, msg_type == 'Z' == 90) ───────────────────────
     when msg_type == 90:
-        required uint8 tx_status "Transaction Status"
+        uint8 tx_status "Transaction Status"
             Idle = 73                # 'I'
             In Transaction = 84     # 'T'
             In Failed Transaction = 69  # 'E'
 
     # ── SimpleQuery (client → server, msg_type == 'Q' == 81) ─────────────────────────
     when msg_type == 81:
-        required cstring query "Query String"
+        cstring query "Query String"
 
     # ── CommandComplete (server → client, msg_type == 'C' == 67) ─────────────────────
     when msg_type == 67:
-        required cstring command_tag "Command Tag"
+        cstring command_tag "Command Tag"
 
     # ── BackendKeyData (server → client, msg_type == 'K' == 75) ─────────────────────
     when msg_type == 75:
-        required uint32 backend_pid "Backend PID"
-        required uint32 secret_key "Secret Key"
+        uint32 backend_pid "Backend PID"
+        uint32 secret_key "Secret Key"
 
     # ── ParameterStatus (server → client, msg_type == 'S' == 83) ────────────────────
     when msg_type == 83:
-        required cstring param_name "Parameter Name"
-        required cstring param_value "Parameter Value"
+        cstring param_name "Parameter Name"
+        cstring param_value "Parameter Value"
 
     # ── ErrorResponse (server → client, msg_type == 'E' == 69) ──────────────────────
     # Fields are (uint8 code, cstring value) pairs terminated by a single 0x00 byte.
@@ -137,7 +137,7 @@ Object<PostgreSQL> Message
     when msg_type == 69:
         repeat until "\x00" as error_field "Error Fields"
             label "%s" field_value
-            required uint8 field_code "Field Code"
+            uint8 field_code "Field Code"
                 Severity = 83            # 'S'
                 Severity Nonloc = 86     # 'V'
                 SQL State = 67           # 'C'
@@ -156,26 +156,26 @@ Object<PostgreSQL> Message
                 File = 70                # 'F'
                 Line = 76                # 'L'
                 Routine = 82             # 'R'
-            required cstring field_value "Field Value"
+            cstring field_value "Field Value"
 
     # ── RowDescription (server → client, msg_type == 'T' == 84) ─────────────────────
     when msg_type == 84:
-        required uint16 field_count "Field Count"
+        uint16 field_count "Field Count"
         repeat field_count as row_field "Row Fields"
             label "%s" field_name
-            required cstring field_name "Field Name"
-            required uint32 table_oid "Table OID"
-            required uint16 column_attr "Column Attribute"
-            required uint32 type_oid "Type OID"
-            required uint16 type_size "Type Size"
-            required uint32 type_modifier "Type Modifier"
-            required uint16 format_code "Format Code"
+            cstring field_name "Field Name"
+            uint32 table_oid "Table OID"
+            uint16 column_attr "Column Attribute"
+            uint32 type_oid "Type OID"
+            uint16 type_size "Type Size"
+            uint32 type_modifier "Type Modifier"
+            uint16 format_code "Format Code"
                 Text = 0
                 Binary = 1
 
     # ── DataRow (server → client, msg_type == 'D' == 68) ─────────────────────────────
     when msg_type == 68:
-        required uint16 field_count "Field Count"
+        uint16 field_count "Field Count"
         payload row_data "Row Data"
 
     # ── PasswordMessage / SASL response (client → server, msg_type == 'p' == 112) ────

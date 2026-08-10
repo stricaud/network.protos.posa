@@ -11,9 +11,9 @@ Object<main> SSH
 Object SSH_Packet
     abbrev "ssh.pkt"
     col "SSH"
-    required uint32 packet_length   ["Packet Length"]
-    required uint8  padding_length  ["Padding Length"]
-    required uint8  msg_type        ["Message Type"]
+    uint32 packet_length   ["Packet Length"]
+    uint8  padding_length  ["Padding Length"]
+    uint8  msg_type        ["Message Type"]
         DISCONNECT           = 1
         IGNORE               = 2
         UNIMPLEMENTED        = 3

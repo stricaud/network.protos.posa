@@ -54,7 +54,7 @@ Object<main> EtherNetIP
 
     # Command — identifies the encapsulation service; sent in both directions.
     # The target echoes the same command code in its response.
-    required le_uint16 command ["Command"]
+    le_uint16 command ["Command"]
         NOP               = 0x0000
         ListServices      = 0x0063
         ListIdentity      = 0x0064
@@ -65,17 +65,17 @@ Object<main> EtherNetIP
 
     # Length — byte count of the encapsulation data that follows the 24-byte
     # header.  0 for commands that carry no data (NOP, UnRegisterSession).
-    required le_uint16 length ["Data Length"]
+    le_uint16 length ["Data Length"]
 
     # Session Handle — assigned by the target in the RegisterSession reply;
     # must appear in every subsequent command within that session.
     # Originators send 0 in the RegisterSession request.
-    required le_uint32 session_handle ["Session Handle"]
+    le_uint32 session_handle ["Session Handle"]
 
     # Status — encapsulation-level result code.  Always 0 in requests.
     # Non-zero in responses indicates the target rejected the command.
     # CIP-level errors are carried inside the CPF item data, not here.
-    required le_uint32 status ["Status"]
+    le_uint32 status ["Status"]
         Success              = 0x00000000
         InvalidCommand       = 0x00000001
         InsufficientMemory   = 0x00000002
@@ -86,10 +86,10 @@ Object<main> EtherNetIP
 
     # Sender Context — 8 opaque bytes chosen by the originator; the target
     # copies them unchanged into the response, allowing request/reply matching.
-    required bytes<8> sender_context ["Sender Context"]
+    bytes<8> sender_context ["Sender Context"]
 
     # Options — reserved for future use; must be 0.
-    required le_uint32 options ["Options"]
+    le_uint32 options ["Options"]
 
     # ── Encapsulation data — presence and format depend on command ────────────
 
@@ -102,13 +102,13 @@ Object<main> EtherNetIP
     when command == 0x0070:
         # SendRRData — unconnected explicit messaging; most PCCC / CIP messages
         # use this command.  Interface handle 0 selects the CIP encapsulator.
-        required le_uint32 interface_handle ["Interface Handle"]
+        le_uint32 interface_handle ["Interface Handle"]
             CIP = 0x00000000
-        required le_uint16 timeout ["Timeout (s)"]
-        required le_uint16 item_count ["Item Count"]
+        le_uint16 timeout ["Timeout (s)"]
+        le_uint16 item_count ["Item Count"]
         repeat item_count as cpf_item ["CPF Item"]
             label "Item 0x%x" type_id
-            required le_uint16 type_id ["Item Type ID"]
+            le_uint16 type_id ["Item Type ID"]
                 NullAddress     = 0x0000
                 ListIdentity    = 0x000C
                 ConnectedAddr   = 0x00A1
@@ -118,7 +118,7 @@ Object<main> EtherNetIP
                 SockaddrO2T     = 0x8000
                 SockaddrT2O     = 0x8001
                 SeqAddrItem     = 0x8002
-            required le_uint16 item_length ["Item Length"]
+            le_uint16 item_length ["Item Length"]
             scope item_length
                 payload item_data ["Item Data"]
 
@@ -126,39 +126,39 @@ Object<main> EtherNetIP
         # SendUnitData — connected explicit messaging; a connection must have been
         # established first (via ForwardOpen).  Timeout is 0 (connection manages
         # timing); sequence address item carries the connection ID.
-        required le_uint32 interface_handle ["Interface Handle"]
+        le_uint32 interface_handle ["Interface Handle"]
             CIP = 0x00000000
-        required le_uint16 timeout ["Timeout (s)"]
-        required le_uint16 item_count ["Item Count"]
+        le_uint16 timeout ["Timeout (s)"]
+        le_uint16 item_count ["Item Count"]
         repeat item_count as cpf_item ["CPF Item"]
             label "Item 0x%x" type_id
-            required le_uint16 type_id ["Item Type ID"]
+            le_uint16 type_id ["Item Type ID"]
                 NullAddress     = 0x0000
                 ConnectedAddr   = 0x00A1
                 ConnectedData   = 0x00B1
                 UnconnectedData = 0x00B2
                 SeqAddrItem     = 0x8002
-            required le_uint16 item_length ["Item Length"]
+            le_uint16 item_length ["Item Length"]
             scope item_length
                 payload item_data ["Item Data"]
 
     when command == 0x0064:
         # ListIdentity — target returns identity objects describing itself.
         # Used by network scanning tools and IO scanners to discover devices.
-        required le_uint16 item_count ["Item Count"]
+        le_uint16 item_count ["Item Count"]
         repeat item_count as id_item ["Identity Item"]
-            required le_uint16 type_id ["Item Type ID"]
-            required le_uint16 item_length ["Item Length"]
+            le_uint16 type_id ["Item Type ID"]
+            le_uint16 item_length ["Item Length"]
             scope item_length
                 payload item_data ["Item Data"]
 
     when command == 0x0063:
         # ListServices — target returns the list of CIP services it supports.
         # Typically returns one item describing the "Communications" service.
-        required le_uint16 item_count ["Item Count"]
+        le_uint16 item_count ["Item Count"]
         repeat item_count as svc_item ["Service Item"]
-            required le_uint16 type_id ["Item Type ID"]
-            required le_uint16 item_length ["Item Length"]
+            le_uint16 type_id ["Item Type ID"]
+            le_uint16 item_length ["Item Length"]
             scope item_length
                 payload item_data ["Item Data"]
 
@@ -188,15 +188,15 @@ Object<main> EtherNetIP
 # Content rules are listed before port rules so the protocol is recognised even
 # on non-standard ports used in some industrial networks.
 
-rule tcp.content "\x65\x00" => EtherNetIP
-rule tcp.content "\x70\x00" => EtherNetIP
-rule tcp.content "\x63\x00" => EtherNetIP
-rule tcp.content "\x64\x00" => EtherNetIP
-rule tcp.content "\x6f\x00" => EtherNetIP
-rule tcp.content "\x66\x00" => EtherNetIP
-rule udp.content@0 "\x6f\x00" => EtherNetIP
-rule udp.content@0 "\x63\x00" => EtherNetIP
-rule udp.content@0 "\x64\x00" => EtherNetIP
+weak rule tcp.content "\x65\x00" => EtherNetIP
+weak rule tcp.content "\x70\x00" => EtherNetIP
+weak rule tcp.content "\x63\x00" => EtherNetIP
+weak rule tcp.content "\x64\x00" => EtherNetIP
+weak rule tcp.content "\x6f\x00" => EtherNetIP
+weak rule tcp.content "\x66\x00" => EtherNetIP
+weak rule udp.content@0 "\x6f\x00" => EtherNetIP
+weak rule udp.content@0 "\x63\x00" => EtherNetIP
+weak rule udp.content@0 "\x64\x00" => EtherNetIP
 
 # ── Port Rules (secondary — hint when content rules did not match) ─────────────
 # Standard ODVA-assigned ports for EtherNet/IP encapsulation.

@@ -12,7 +12,7 @@ Object<main> OpenVPN
     abbrev "openvpn"
     col "OpenVPN"
 
-    required uint8 opcode_keyid ["Opcode/Key ID"]
+    uint8 opcode_keyid ["Opcode/Key ID"]
 
     bits opcode_keyid opcode 3 5 ["Opcode"]
         1  = P_CONTROL_HARD_RESET_CLIENT_V1
@@ -29,9 +29,9 @@ Object<main> OpenVPN
 
     bits opcode_keyid key_id 0 3 ["Key ID"]
 
-    required bytes<8> session_id ["Session ID"]
+    bytes<8> session_id ["Session ID"]
 
-    required payload data ["Payload"]
+    payload data ["Payload"]
 
     info "%s key_id=%u" opcode, key_id
 
@@ -41,9 +41,9 @@ Object<main> OpenVPN
 # P_CONTROL_HARD_RESET_SERVER_V2 = 0x40, P_CONTROL_HARD_RESET_CLIENT_V1 = 0x08.
 # TCP framing: first 2 bytes = uint16 packet length, then opcode — 0x00 0x1c 0x38
 # matches a 28-byte reset packet (the minimum control-packet size).
-rule udp.content "\x38" => OpenVPN
-rule udp.content "\x40" => OpenVPN
-rule udp.content "\x08" => OpenVPN
+weak rule udp.content "\x38" => OpenVPN
+weak rule udp.content "\x40" => OpenVPN
+weak rule udp.content "\x08" => OpenVPN
 rule tcp.content "\x00\x1c\x38" => OpenVPN
 
 # ── port binding (secondary hints) ───────────────────────────────────────────

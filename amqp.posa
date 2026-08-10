@@ -44,15 +44,15 @@ Object<AMQP_HEADER> AMQP_091_HEADER
     col    "AMQP"
     starts "AMQP\x00\x00\x09\x01"
 
-    required bytes<4> magic = "AMQP" "Protocol Magic"
-    required uint8 protocol_id "Protocol ID"
+    bytes<4> magic = "AMQP" "Protocol Magic"
+    uint8 protocol_id "Protocol ID"
         0 = "AMQP"
         1 = "TLS"
         2 = "SASL"
         3 = "SASL-AMQP"
-    required uint8 major    "Major Version"
-    required uint8 minor    "Minor Version"
-    required uint8 revision "Revision"
+    uint8 major    "Major Version"
+    uint8 minor    "Minor Version"
+    uint8 revision "Revision"
 
     info "AMQP 0-9-1 Header  protocol-id=%u  v%u.%u.%u" protocol_id, major, minor, revision
 
@@ -65,14 +65,14 @@ Object<AMQP_HEADER> AMQP_10_HEADER
     col    "AMQP"
     starts "AMQP\x00\x01\x00\x00"
 
-    required bytes<4> magic = "AMQP" "Protocol Magic"
-    required uint8 protocol_id "Protocol ID"
+    bytes<4> magic = "AMQP" "Protocol Magic"
+    uint8 protocol_id "Protocol ID"
         0 = "AMQP"
         1 = "TLS"
         2 = "SASL"
-    required uint8 major    "Major Version"
-    required uint8 minor    "Minor Version"
-    required uint8 revision "Revision"
+    uint8 major    "Major Version"
+    uint8 minor    "Minor Version"
+    uint8 revision "Revision"
 
     info "AMQP 1.0 Header  protocol-id=%u  v%u.%u.%u" protocol_id, major, minor, revision
 
@@ -84,15 +84,15 @@ Object<AMQP_HEADER> AMQP_GENERIC_HEADER
     col    "AMQP"
     starts "AMQP"
 
-    required bytes<4> magic = "AMQP" "Protocol Magic"
-    required uint8 protocol_id "Protocol ID"
+    bytes<4> magic = "AMQP" "Protocol Magic"
+    uint8 protocol_id "Protocol ID"
         0 = "AMQP"
         1 = "TLS"
         2 = "SASL"
         3 = "SASL-AMQP"
-    required uint8 major    "Major Version"
-    required uint8 minor    "Minor Version"
-    required uint8 revision "Revision"
+    uint8 major    "Major Version"
+    uint8 minor    "Minor Version"
+    uint8 revision "Revision"
 
     info "AMQP Header  protocol-id=%u  v%u.%u.%u" protocol_id, major, minor, revision
 
@@ -105,7 +105,7 @@ Object<main> AMQP
     col    "AMQP"
 
     # Frame type — upper 3 types are the data plane; HEARTBEAT is a keepalive.
-    required uint8 frame_type "Frame Type"
+    uint8 frame_type "Frame Type"
         1 = "METHOD"
         2 = "HEADER"
         3 = "BODY"
@@ -113,15 +113,15 @@ Object<main> AMQP
 
     # Channel 0 is reserved for connection-level communication; channels 1–65535
     # are session channels negotiated during Connection.Open / Channel.Open.
-    required uint16 channel      "Channel"
-    required uint32 payload_size "Payload Size"
+    uint16 channel      "Channel"
+    uint32 payload_size "Payload Size"
 
     # ── METHOD frame payload ───────────────────────────────────────────────────
     # Payload = class_id (2) + method_id (2) + method-specific arguments.
     # The scope bounds class_id + method_id + method_args to exactly payload_size bytes.
     when frame_type == 1:
         scope payload_size
-            required uint16 class_id "Class ID"
+            uint16 class_id "Class ID"
                 10  = "CONNECTION"
                 20  = "CHANNEL"
                 30  = "EXCHANGE"
@@ -133,18 +133,18 @@ Object<main> AMQP
             # method_id meaning depends on class_id (e.g. 10=start for CONNECTION,
             # 10=open for CHANNEL).  The numeric value is always shown; a future
             # when/class branch could decode it symbolically per class.
-            required uint16 method_id "Method ID"
+            uint16 method_id "Method ID"
 
             # Remaining bytes are class- and method-specific argument fields
             # encoded in the AMQP type system (tables, short-strings, longs, etc.).
-            required payload method_args "Method Arguments"
+            payload method_args "Method Arguments"
 
     # ── HEADER (content header) frame payload ─────────────────────────────────
     # Carries the class_id of the following body, the full body size across all
     # BODY frames, and a property bitmask followed by present property values.
     when frame_type == 2:
         scope payload_size
-            required uint16 class_id "Class ID"
+            uint16 class_id "Class ID"
                 10  = "CONNECTION"
                 20  = "CHANNEL"
                 30  = "EXCHANGE"
@@ -154,19 +154,19 @@ Object<main> AMQP
                 90  = "CONFIRM"
 
             # weight is always 0 in AMQP 0-9-1 (reserved for future use).
-            required uint16 weight    "Weight"
+            uint16 weight    "Weight"
             # body_size is the total byte count across ALL subsequent BODY frames
             # for this message, allowing receivers to reassemble large messages.
-            required uint64 body_size "Body Size"
+            uint64 body_size "Body Size"
             # property flags (16-bit bitmask) and present property fields follow.
-            required payload header_props "Header Properties"
+            payload header_props "Header Properties"
 
     # ── BODY frame payload ─────────────────────────────────────────────────────
     # Raw application message bytes; one message may span multiple BODY frames.
     # The total byte count across all BODY frames equals body_size from the
     # preceding HEADER frame.
     when frame_type == 3:
-        required bytes[payload_size] body "Message Body"
+        bytes[payload_size] body "Message Body"
 
     # ── HEARTBEAT frame ────────────────────────────────────────────────────────
     # payload_size is always 0; no payload bytes follow.  Sent periodically on
@@ -175,7 +175,7 @@ Object<main> AMQP
 
     # Frame-end marker: 0xCE must terminate every frame.  A mismatch indicates
     # framing corruption, a buggy broker, or a non-AMQP connection.
-    required uint8 frame_end = 0xCE "Frame End"
+    uint8 frame_end = 0xCE "Frame End"
 
     info "AMQP %s  ch=%u  size=%u" frame_type, channel, payload_size
 

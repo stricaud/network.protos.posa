@@ -74,7 +74,7 @@ rule udp.content "\x00\x02\x00\x46" => DISCORD
 rule udp.content "\x13\x37\xca\xfe" => DISCORD
 
 # Voice RTP-like packets: flags=0x80, payload_type=0x78
-rule udp.content "\x80\x78" => DISCORD
+weak rule udp.content "\x80\x78" => DISCORD
 
 color discord.type == 0x00010046 => black lightyellow
 color discord.type == 0x00020046 => black lightgreen

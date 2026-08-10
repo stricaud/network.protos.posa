@@ -54,13 +54,13 @@ Object<main> CAPWAP
     abbrev "capwap"
     col "CAPWAP"
 
-    required uint8  preamble    hex "Preamble"
+    uint8  preamble    hex "Preamble"
     bits preamble version 4 4 "Version"
     bits preamble type    0 4 "Type"
         CAPWAP_Plain = 0
         CAPWAP_DTLS  = 1
 
-    required uint32 capwap_header "CAPWAP Header"
+    uint32 capwap_header "CAPWAP Header"
     bits capwap_header hlen  27 5 "Header Length (words)"
     bits capwap_header rid   22 5 "Radio ID"
     bits capwap_header wbid  16 6 "Wireless Binding ID"
@@ -75,12 +75,12 @@ Object<main> CAPWAP
     bits capwap_header M     11 1 "Radio MAC"
     bits capwap_header K     10 1 "Keep-Alive"
 
-    required uint16 fragment_id "Fragment ID"
-    required uint16 fragment_offset_rsvd "Fragment Offset/Reserved"
+    uint16 fragment_id "Fragment ID"
+    uint16 fragment_offset_rsvd "Fragment Offset/Reserved"
     bits fragment_offset_rsvd fragment_offset 3 13 "Fragment Offset"
 
     when T == 1:
-        required uint32 msg_element_length "Control Header"
+        uint32 msg_element_length "Control Header"
         bits msg_element_length msg_type 16 16 "Message Type"
             lookup CapwapMessageTypes
         bits msg_element_length seq_num 8 8 "Sequence Number"

@@ -3,12 +3,12 @@
 # scripts/mysql-queries.lua; this decoder labels single client-command packets.
 protocol MySQL
     col "MySQL"
-    required bytes<3> length
-    required uint8    seq
-    required uint8    command "Command"
+    bytes<3> length
+    uint8    seq
+    uint8    command "Command"
         COM_QUIT     = 1
         COM_INIT_DB  = 2
         COM_QUERY    = 3
         COM_PING     = 14
-    required payload  query "Query"
+    payload  query "Query"
 rule tcp.port == 3306 => MySQL

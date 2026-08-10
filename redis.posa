@@ -26,7 +26,7 @@ Object<main> REDIS
 
     # One ASCII byte selects the message type.  Enum labels appear in the
     # Type column and in the %s expansion of the info line below.
-    required uint8 type_byte "Type"
+    uint8 type_byte "Type"
         0x2B = Simple String
         0x2D = Error
         0x3A = Integer
@@ -45,68 +45,68 @@ Object<main> REDIS
 
     # +<text>\r\n  — server confirms success or sends a status word (e.g. "OK")
     when type_byte == 0x2B:
-        required string value until "\r\n" "Simple String"
+        string value until "\r\n" "Simple String"
 
     # -<message>\r\n  — server signals an error ("ERR unknown command …")
     when type_byte == 0x2D:
-        required string value until "\r\n" "Error Message"
+        string value until "\r\n" "Error Message"
 
     # :<number>\r\n  — server returns a signed 64-bit integer as decimal text
     when type_byte == 0x3A:
-        required string value until "\r\n" "Integer"
+        string value until "\r\n" "Integer"
 
     # $<bytecount>\r\n<data>\r\n  — a binary-safe byte string
     # The declared byte count is read here; the data follows as a payload so
     # that binary content (images, serialised objects) is not mis-parsed.
     when type_byte == 0x24:
-        required string length until "\r\n" "Bulk Length"
-        required payload data "Bulk Data"
+        string length until "\r\n" "Bulk Length"
+        payload data "Bulk Data"
 
     # *<count>\r\n  followed by <count> RESP elements (most client commands)
     when type_byte == 0x2A:
-        required string count until "\r\n" "Element Count"
-        required payload data "Array Elements"
+        string count until "\r\n" "Element Count"
+        payload data "Array Elements"
 
     # ── RESP3 types (Redis 6+) ────────────────────────────────────────────────
 
     # _\r\n  — typed null (replaces the $-1 / *-1 null sentinels of RESP2)
     when type_byte == 0x5F:
-        required string value until "\r\n" "Null Marker"
+        string value until "\r\n" "Null Marker"
 
     # ,<double>\r\n  — IEEE 754 double as decimal text, or "inf" / "-inf"
     when type_byte == 0x2C:
-        required string value until "\r\n" "Double"
+        string value until "\r\n" "Double"
 
     # #<t|f>\r\n  — boolean: literal 't' or 'f'
     when type_byte == 0x23:
-        required string value until "\r\n" "Boolean"
+        string value until "\r\n" "Boolean"
 
     # (<digits>\r\n  — arbitrary-precision signed integer as decimal text
     when type_byte == 0x28:
-        required string value until "\r\n" "Big Number"
+        string value until "\r\n" "Big Number"
 
     # ~<count>\r\n  — unordered set of <count> RESP3 elements
     when type_byte == 0x7E:
-        required string count until "\r\n" "Set Size"
-        required payload data "Set Elements"
+        string count until "\r\n" "Set Size"
+        payload data "Set Elements"
 
     # |<count>\r\n  — attribute / metadata map of <count> key-value pairs
     when type_byte == 0x7C:
-        required string count until "\r\n" "Attribute Count"
-        required payload data "Attribute Data"
+        string count until "\r\n" "Attribute Count"
+        payload data "Attribute Data"
 
     # ><count>\r\n  — server-initiated push (Pub/Sub, keyspace notifications)
     when type_byte == 0x3E:
-        required string count until "\r\n" "Push Count"
-        required payload data "Push Data"
+        string count until "\r\n" "Push Count"
+        payload data "Push Data"
 
     # %<count>\r\n  — map of <count> key-value pairs (RESP3 equivalent of Hash)
     when type_byte == 0x25:
-        required string count until "\r\n" "Map Size"
-        required payload data "Map Entries"
+        string count until "\r\n" "Map Size"
+        payload data "Map Entries"
 
     else:
-        required payload data "Data"
+        payload data "Data"
 
     # Info column: type enum label, then whichever of value / count / length is
     # present for this message.  Missing fields collapse to nothing automatically
@@ -119,13 +119,13 @@ Object<main> REDIS
 # The leading-byte signatures are unambiguous because RESP uses only printable
 # ASCII type bytes that do not start other common protocols.
 
-rule tcp.content "*" => REDIS
-rule tcp.content "+" => REDIS
-rule tcp.content "$" => REDIS
-rule tcp.content ":" => REDIS
-rule tcp.content "-" => REDIS
-rule tcp.content "_" => REDIS
-rule tcp.content "%" => REDIS
+weak rule tcp.content "*" => REDIS
+weak rule tcp.content "+" => REDIS
+weak rule tcp.content "$" => REDIS
+weak rule tcp.content ":" => REDIS
+weak rule tcp.content "-" => REDIS
+weak rule tcp.content "_" => REDIS
+weak rule tcp.content "%" => REDIS
 
 # Port rule is a secondary hint — active only when content rules do not match.
 rule tcp.port == 6379 => REDIS

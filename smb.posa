@@ -30,12 +30,12 @@ Object<main> NBSS
     abbrev "nbss"
     col "SMB"
 
-    required uint8 msg_type "Message Type"
+    uint8 msg_type "Message Type"
         Session message = 0x00
         Session request = 0x81
         Positive session response = 0x82
         Negative session response = 0x83
-    required uint24 length "Length"
+    uint24 length "Length"
     scope length
         layer smb SMB
 
@@ -46,10 +46,10 @@ Object<SMB> SMB2
     abbrev "smb2"
     col "SMB2"
 
-    required uint32 protocol_id = 0xFE534D42 hex "Protocol ID"
-    required le_uint16 header_length "Header Length"
-    required le_uint16 credit_charge "Credit Charge"
-    required le_uint32 status "Status"
+    uint32 protocol_id = 0xFE534D42 hex "Protocol ID"
+    le_uint16 header_length "Header Length"
+    le_uint16 credit_charge "Credit Charge"
+    le_uint32 status "Status"
         STATUS_SUCCESS = 0x00000000
         STATUS_PENDING = 0x00000103
         STATUS_NOTIFY_CLEANUP = 0x0000010b
@@ -64,7 +64,7 @@ Object<SMB> SMB2
         STATUS_NOT_SUPPORTED = 0xc00000bb
         STATUS_FILE_CLOSED = 0xc0000128
         STATUS_NO_MORE_FILES = 0x80000006
-    required le_uint16 command "Command"
+    le_uint16 command "Command"
         Negotiate = 0
         Session Setup = 1
         Logoff = 2
@@ -84,36 +84,36 @@ Object<SMB> SMB2
         Query Info = 16
         Set Info = 17
         Oplock Break = 18
-    required le_uint16 credits "Credits"
-    required le_uint32 flags hex "Flags"
+    le_uint16 credits "Credits"
+    le_uint32 flags hex "Flags"
         bits flags response 0 1 "Direction"
             Request = 0
             Response = 1
         bits flags async 1 1 "Async command"
         bits flags related 2 1 "Related operation"
         bits flags signing 3 1 "Signed"
-    required le_uint32 next_command "Next Command"
-    required le_uint64 message_id "Message ID"
-    required le_uint32 reserved "Reserved"
-    required le_uint32 tree_id "Tree ID"
-    required le_uint64 session_id hex "Session ID"
-    required bytes<16> signature "Signature"
+    le_uint32 next_command "Next Command"
+    le_uint64 message_id "Message ID"
+    le_uint32 reserved "Reserved"
+    le_uint32 tree_id "Tree ID"
+    le_uint64 session_id hex "Session ID"
+    bytes<16> signature "Signature"
 
     # ── Negotiate ────────────────────────────────────────────────────────────
     when command == 0:
         when response == 0:
-            required le_uint16 structure_size "Structure Size"
-            required le_uint16 dialect_count "Dialect Count"
-            required le_uint16 security_mode "Security Mode"
+            le_uint16 structure_size "Structure Size"
+            le_uint16 dialect_count "Dialect Count"
+            le_uint16 security_mode "Security Mode"
                 Signing enabled = 1
                 Signing required = 2
-            required le_uint16 reserved2 "Reserved"
-            required le_uint32 capabilities hex "Capabilities"
-            required bytes<16> client_guid "Client GUID"
-            required bytes<8> client_start_time "Client Start Time"
+            le_uint16 reserved2 "Reserved"
+            le_uint32 capabilities hex "Capabilities"
+            bytes<16> client_guid "Client GUID"
+            bytes<8> client_start_time "Client Start Time"
             repeat dialect_count as dialect "Dialects"
                 label "Dialect: %s" dialect_rev
-                required le_uint16 dialect_rev "Dialect"
+                le_uint16 dialect_rev "Dialect"
                     SMB 2.0.2 = 0x0202
                     SMB 2.1 = 0x0210
                     SMB 3.0 = 0x0300
@@ -121,189 +121,189 @@ Object<SMB> SMB2
                     SMB 3.1.1 = 0x0311
                     SMB 2.??? = 0x02ff
         when response == 1:
-            required le_uint16 structure_size "Structure Size"
-            required le_uint16 security_mode "Security Mode"
-            required le_uint16 dialect_rev "Dialect"
+            le_uint16 structure_size "Structure Size"
+            le_uint16 security_mode "Security Mode"
+            le_uint16 dialect_rev "Dialect"
                 SMB 2.0.2 = 0x0202
                 SMB 2.1 = 0x0210
                 SMB 3.0 = 0x0300
                 SMB 3.0.2 = 0x0302
                 SMB 3.1.1 = 0x0311
-            required le_uint16 negotiate_context_count "Negotiate Context Count"
-            required bytes<16> server_guid "Server GUID"
-            required le_uint32 capabilities hex "Capabilities"
-            required le_uint32 max_transact_size "Max Transaction Size"
-            required le_uint32 max_read_size "Max Read Size"
-            required le_uint32 max_write_size "Max Write Size"
-            required bytes<8> system_time "System Time"
-            required bytes<8> server_start_time "Server Start Time"
-            required le_uint16 sec_offset "Security Buffer Offset"
-            required le_uint16 sec_length "Security Buffer Length"
+            le_uint16 negotiate_context_count "Negotiate Context Count"
+            bytes<16> server_guid "Server GUID"
+            le_uint32 capabilities hex "Capabilities"
+            le_uint32 max_transact_size "Max Transaction Size"
+            le_uint32 max_read_size "Max Read Size"
+            le_uint32 max_write_size "Max Write Size"
+            bytes<8> system_time "System Time"
+            bytes<8> server_start_time "Server Start Time"
+            le_uint16 sec_offset "Security Buffer Offset"
+            le_uint16 sec_length "Security Buffer Length"
             seek sec_offset
-            required bytes[sec_length] security_blob "Security Blob (GSS-API)"
+            bytes[sec_length] security_blob "Security Blob (GSS-API)"
 
     # ── Session Setup ────────────────────────────────────────────────────────
     when command == 1:
         when response == 0:
-            required le_uint16 structure_size "Structure Size"
-            required uint8 session_flags "Flags"
-            required uint8 security_mode "Security Mode"
-            required le_uint32 capabilities hex "Capabilities"
-            required le_uint32 channel "Channel"
-            required le_uint16 sec_offset "Security Buffer Offset"
-            required le_uint16 sec_length "Security Buffer Length"
-            required le_uint64 previous_session_id "Previous Session ID"
+            le_uint16 structure_size "Structure Size"
+            uint8 session_flags "Flags"
+            uint8 security_mode "Security Mode"
+            le_uint32 capabilities hex "Capabilities"
+            le_uint32 channel "Channel"
+            le_uint16 sec_offset "Security Buffer Offset"
+            le_uint16 sec_length "Security Buffer Length"
+            le_uint64 previous_session_id "Previous Session ID"
             seek sec_offset
-            required bytes[sec_length] security_blob "Security Blob (NTLMSSP/Kerberos)"
+            bytes[sec_length] security_blob "Security Blob (NTLMSSP/Kerberos)"
         when response == 1:
-            required le_uint16 structure_size "Structure Size"
-            required le_uint16 session_flags "Session Flags"
+            le_uint16 structure_size "Structure Size"
+            le_uint16 session_flags "Session Flags"
                 Guest = 1
                 Null = 2
                 Encrypt data = 4
-            required le_uint16 sec_offset "Security Buffer Offset"
-            required le_uint16 sec_length "Security Buffer Length"
+            le_uint16 sec_offset "Security Buffer Offset"
+            le_uint16 sec_length "Security Buffer Length"
             seek sec_offset
-            required bytes[sec_length] security_blob "Security Blob (NTLMSSP/Kerberos)"
+            bytes[sec_length] security_blob "Security Blob (NTLMSSP/Kerberos)"
 
     # ── Tree Connect ─────────────────────────────────────────────────────────
     when command == 3:
         when response == 0:
-            required le_uint16 structure_size "Structure Size"
-            required le_uint16 reserved3 "Reserved"
-            required le_uint16 path_offset "Path Offset"
-            required le_uint16 path_length "Path Length"
+            le_uint16 structure_size "Structure Size"
+            le_uint16 reserved3 "Reserved"
+            le_uint16 path_offset "Path Offset"
+            le_uint16 path_length "Path Length"
             seek path_offset
-            required utf16[path_length] path "Tree"
+            utf16[path_length] path "Tree"
         when response == 1:
-            required le_uint16 structure_size "Structure Size"
-            required uint8 share_type "Share Type"
+            le_uint16 structure_size "Structure Size"
+            uint8 share_type "Share Type"
                 Physical disk = 1
                 Named pipe = 2
                 Printer = 3
-            required uint8 reserved4 "Reserved"
-            required le_uint32 share_flags "Share Flags"
-            required le_uint32 capabilities hex "Capabilities"
-            required le_uint32 maximal_access "Maximal Access"
+            uint8 reserved4 "Reserved"
+            le_uint32 share_flags "Share Flags"
+            le_uint32 capabilities hex "Capabilities"
+            le_uint32 maximal_access "Maximal Access"
 
     # ── Create ───────────────────────────────────────────────────────────────
     when command == 5:
         when response == 0:
-            required le_uint16 structure_size "Structure Size"
-            required uint8 security_flags "Security Flags"
-            required uint8 oplock "Requested Oplock Level"
-            required le_uint32 impersonation "Impersonation Level"
-            required bytes<8> create_flags "SMB Create Flags"
-            required bytes<8> reserved5 "Reserved"
-            required le_uint32 desired_access hex "Desired Access"
-            required le_uint32 file_attributes "File Attributes"
-            required le_uint32 share_access "Share Access"
-            required le_uint32 create_disposition "Create Disposition"
+            le_uint16 structure_size "Structure Size"
+            uint8 security_flags "Security Flags"
+            uint8 oplock "Requested Oplock Level"
+            le_uint32 impersonation "Impersonation Level"
+            bytes<8> create_flags "SMB Create Flags"
+            bytes<8> reserved5 "Reserved"
+            le_uint32 desired_access hex "Desired Access"
+            le_uint32 file_attributes "File Attributes"
+            le_uint32 share_access "Share Access"
+            le_uint32 create_disposition "Create Disposition"
                 Supersede = 0
                 Open = 1
                 Create = 2
                 Open if = 3
                 Overwrite = 4
                 Overwrite if = 5
-            required le_uint32 create_options "Create Options"
-            required le_uint16 name_offset "Filename Offset"
-            required le_uint16 name_length "Filename Length"
-            required le_uint32 cc_offset "Create Contexts Offset"
-            required le_uint32 cc_length "Create Contexts Length"
+            le_uint32 create_options "Create Options"
+            le_uint16 name_offset "Filename Offset"
+            le_uint16 name_length "Filename Length"
+            le_uint32 cc_offset "Create Contexts Offset"
+            le_uint32 cc_length "Create Contexts Length"
             seek name_offset
-            required utf16[name_length] filename "Filename"
+            utf16[name_length] filename "Filename"
         when response == 1:
-            required le_uint16 structure_size "Structure Size"
-            required uint8 oplock "Oplock Level"
-            required uint8 create_flags2 "Flags"
-            required le_uint32 create_action "Create Action"
+            le_uint16 structure_size "Structure Size"
+            uint8 oplock "Oplock Level"
+            uint8 create_flags2 "Flags"
+            le_uint32 create_action "Create Action"
                 Superseded = 0
                 Opened = 1
                 Created = 2
                 Overwritten = 3
-            required bytes<8> creation_time "Created"
-            required bytes<8> last_access "Last Access"
-            required bytes<8> last_write "Last Write"
-            required bytes<8> change_time "Last Change"
-            required le_uint64 allocation_size "Allocation Size"
-            required le_uint64 end_of_file "End of File"
-            required le_uint32 file_attributes "File Attributes"
-            required le_uint32 reserved6 "Reserved"
-            required bytes<16> file_id "File ID"
+            bytes<8> creation_time "Created"
+            bytes<8> last_access "Last Access"
+            bytes<8> last_write "Last Write"
+            bytes<8> change_time "Last Change"
+            le_uint64 allocation_size "Allocation Size"
+            le_uint64 end_of_file "End of File"
+            le_uint32 file_attributes "File Attributes"
+            le_uint32 reserved6 "Reserved"
+            bytes<16> file_id "File ID"
 
     # ── Close ────────────────────────────────────────────────────────────────
     when command == 6:
         when response == 0:
-            required le_uint16 structure_size "Structure Size"
-            required le_uint16 close_flags "Flags"
-            required le_uint32 reserved7 "Reserved"
-            required bytes<16> file_id "File ID"
+            le_uint16 structure_size "Structure Size"
+            le_uint16 close_flags "Flags"
+            le_uint32 reserved7 "Reserved"
+            bytes<16> file_id "File ID"
 
     # ── Read ─────────────────────────────────────────────────────────────────
     when command == 8:
         when response == 0:
-            required le_uint16 structure_size "Structure Size"
-            required uint8 padding "Padding"
-            required uint8 read_flags "Flags"
-            required le_uint32 read_length "Length"
-            required le_uint64 file_offset "File Offset"
-            required bytes<16> file_id "File ID"
-            required le_uint32 minimum_count "Minimum Count"
+            le_uint16 structure_size "Structure Size"
+            uint8 padding "Padding"
+            uint8 read_flags "Flags"
+            le_uint32 read_length "Length"
+            le_uint64 file_offset "File Offset"
+            bytes<16> file_id "File ID"
+            le_uint32 minimum_count "Minimum Count"
         when response == 1:
-            required le_uint16 structure_size "Structure Size"
-            required uint8 data_offset "Data Offset"
-            required uint8 reserved8 "Reserved"
-            required le_uint32 data_length "Data Length"
-            required le_uint32 data_remaining "Data Remaining"
+            le_uint16 structure_size "Structure Size"
+            uint8 data_offset "Data Offset"
+            uint8 reserved8 "Reserved"
+            le_uint32 data_length "Data Length"
+            le_uint32 data_remaining "Data Remaining"
             seek data_offset
-            required bytes[data_length] data "Data"
+            bytes[data_length] data "Data"
 
     # ── Write ────────────────────────────────────────────────────────────────
     when command == 9:
         when response == 0:
-            required le_uint16 structure_size "Structure Size"
-            required le_uint16 data_offset "Data Offset"
-            required le_uint32 write_length "Length"
-            required le_uint64 file_offset "File Offset"
-            required bytes<16> file_id "File ID"
+            le_uint16 structure_size "Structure Size"
+            le_uint16 data_offset "Data Offset"
+            le_uint32 write_length "Length"
+            le_uint64 file_offset "File Offset"
+            bytes<16> file_id "File ID"
             seek data_offset
-            required bytes[write_length] data "Data"
+            bytes[write_length] data "Data"
         when response == 1:
-            required le_uint16 structure_size "Structure Size"
-            required le_uint16 reserved9 "Reserved"
-            required le_uint32 count "Count"
+            le_uint16 structure_size "Structure Size"
+            le_uint16 reserved9 "Reserved"
+            le_uint32 count "Count"
 
     # ── Query Directory ──────────────────────────────────────────────────────
     when command == 14:
         when response == 0:
-            required le_uint16 structure_size "Structure Size"
-            required uint8 info_class "File Information Class"
-            required uint8 qd_flags "Flags"
-            required le_uint32 file_index "File Index"
-            required bytes<16> file_id "File ID"
-            required le_uint16 name_offset "Search Pattern Offset"
-            required le_uint16 name_length "Search Pattern Length"
-            required le_uint32 output_length "Output Buffer Length"
+            le_uint16 structure_size "Structure Size"
+            uint8 info_class "File Information Class"
+            uint8 qd_flags "Flags"
+            le_uint32 file_index "File Index"
+            bytes<16> file_id "File ID"
+            le_uint16 name_offset "Search Pattern Offset"
+            le_uint16 name_length "Search Pattern Length"
+            le_uint32 output_length "Output Buffer Length"
             seek name_offset
-            required utf16[name_length] filename "Search Pattern"
+            utf16[name_length] filename "Search Pattern"
 
     # ── Query Info ───────────────────────────────────────────────────────────
     when command == 16:
         when response == 0:
-            required le_uint16 structure_size "Structure Size"
-            required uint8 info_type "Info Type"
+            le_uint16 structure_size "Structure Size"
+            uint8 info_type "Info Type"
                 File = 1
                 Filesystem = 2
                 Security = 3
                 Quota = 4
-            required uint8 file_info_class "File Info Class"
-            required le_uint32 output_length "Output Buffer Length"
-            required le_uint16 input_offset "Input Buffer Offset"
-            required le_uint16 reserved10 "Reserved"
-            required le_uint32 input_length "Input Buffer Length"
-            required le_uint32 additional_info "Additional Information"
-            required le_uint32 qi_flags "Flags"
-            required bytes<16> file_id "File ID"
+            uint8 file_info_class "File Info Class"
+            le_uint32 output_length "Output Buffer Length"
+            le_uint16 input_offset "Input Buffer Offset"
+            le_uint16 reserved10 "Reserved"
+            le_uint32 input_length "Input Buffer Length"
+            le_uint32 additional_info "Additional Information"
+            le_uint32 qi_flags "Flags"
+            bytes<16> file_id "File ID"
 
     info "%s %s %s%s %s" command, response, path, filename, dialect_rev
 
@@ -312,8 +312,8 @@ Object<SMB> SMB1
     abbrev "smb"
     col "SMB"
 
-    required uint32 protocol_id = 0xFF534D42 hex "Protocol ID"
-    required uint8 smb_command "Command"
+    uint32 protocol_id = 0xFF534D42 hex "Protocol ID"
+    uint8 smb_command "Command"
         Create Directory   = 0x00
         Delete Directory   = 0x01
         Open               = 0x02
@@ -371,16 +371,16 @@ Object<SMB> SMB1
         Close Print File   = 0xC2
         Get Print Queue    = 0xC3
         No AndX Command    = 0xFF
-    required le_uint32 nt_status "NT Status"
-    required uint8 smb_flags "Flags"
-    required le_uint16 smb_flags2 "Flags2"
-    required le_uint16 pid_high "PID High"
-    required bytes<8> security_features "Signature"
-    required le_uint16 reserved "Reserved"
-    required le_uint16 tid "Tree ID"
-    required le_uint16 pid "Process ID"
-    required le_uint16 uid "User ID"
-    required le_uint16 mid "Multiplex ID"
+    le_uint32 nt_status "NT Status"
+    uint8 smb_flags "Flags"
+    le_uint16 smb_flags2 "Flags2"
+    le_uint16 pid_high "PID High"
+    bytes<8> security_features "Signature"
+    le_uint16 reserved "Reserved"
+    le_uint16 tid "Tree ID"
+    le_uint16 pid "Process ID"
+    le_uint16 uid "User ID"
+    le_uint16 mid "Multiplex ID"
 
     info "SMB1 %s" smb_command
 

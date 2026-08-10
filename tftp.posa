@@ -10,37 +10,37 @@
 
 Object<TFTP> TFTP_RRQ
     abbrev "tftp"
-    required uint16  opcode = 1
+    uint16  opcode = 1
         RRQ = 1
-    required cstring filename
-    required cstring mode
+    cstring filename
+    cstring mode
 
 Object<TFTP> TFTP_WRQ
     abbrev "tftp"
-    required uint16  opcode = 2
+    uint16  opcode = 2
         WRQ = 2
-    required cstring filename
-    required cstring mode
+    cstring filename
+    cstring mode
 
 Object<TFTP> TFTP_DATA
     abbrev "tftp"
-    required uint16  opcode = 3
+    uint16  opcode = 3
         DATA = 3
-    required uint16  block = 1
-    required payload data
+    uint16  block = 1
+    payload data
 
 Object<TFTP> TFTP_ACK
     abbrev "tftp"
-    required uint16 opcode = 4
+    uint16 opcode = 4
         ACK = 4
-    required uint16 block = 0
+    uint16 block = 0
 
 Object<TFTP> TFTP_ERROR
     abbrev "tftp"
-    required uint16  opcode = 5
+    uint16  opcode = 5
         ERROR = 5
-    required uint16  code = 0
-    required cstring msg
+    uint16  code = 0
+    cstring msg
 
 rule udp.port == 69 => TFTP
 

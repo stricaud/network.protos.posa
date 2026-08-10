@@ -2,7 +2,7 @@
 # Carried over IPv6 next_header=58. checksum covers IPv6 pseudo-header + ICMPv6 message.
 # data field interpretation is type-specific: echo id+seq, ND target address, etc.
 Object<main> ICMPv6
-    required uint8  type = 128
+    uint8  type = 128
         DST_UNREACH      = 1
         PKT_TOO_BIG      = 2
         TIME_EXCEEDED    = 3
@@ -18,6 +18,6 @@ Object<main> ICMPv6
         NEIGHBOR_ADVERT  = 136
         REDIRECT         = 137
         MLDV2_REPORT     = 143
-    required uint8  code = 0
-    required uint16 checksum = 0
-    required uint32 data = 0
+    uint8  code = 0
+    uint16 checksum = 0
+    uint32 data = 0

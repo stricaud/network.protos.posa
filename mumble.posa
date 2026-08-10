@@ -61,7 +61,7 @@ rule tcp.port == 64738 => MUMBLE
 
 # The version handshake starts with uint16=0 (Version) then uint32 length then
 # the protobuf; the first 2 bytes are always \x00\x00 for the very first message.
-rule tcp.content "\x00\x00" => MUMBLE
+weak rule tcp.content "\x00\x00" => MUMBLE
 
 color mumble.type == 11 => black lightgreen
 color mumble.type == 2  => black lightyellow

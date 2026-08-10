@@ -41,11 +41,11 @@ Object<main> XMPP
     # Element tag name — the stanza type indicator.
     # Typical values: <?xml  <stream:stream  <iq  <message  <presence
     # Closing tags:   </stream:stream>  (no space; full tag lands here)
-    required string stanza until " "   "Stanza"
+    string stanza until " "   "Stanza"
 
     # Remaining XML attributes up to the closing ">" of the opening element.
     # Example:  type="get" from="user@example.com" to="example.com" id="aabbcc">
-    required string attrs  until ">"   "Attributes"
+    string attrs  until ">"   "Attributes"
 
     # Rest of the TCP segment — subsequent stanzas, stream body, or TLS data.
     payload body                       "Stream Body"

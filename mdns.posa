@@ -48,8 +48,8 @@
 Object<main> MDNS_RR
     abbrev "mdns"
 
-    required dnsname name "Name"
-    required uint16 type "Type"
+    dnsname name "Name"
+    uint16 type "Type"
         A     = 1
         NS    = 2
         CNAME = 5
@@ -64,7 +64,7 @@ Object<main> MDNS_RR
         NSEC  = 47
         HTTPS = 65
         ANY   = 255
-    required uint16 class mask 0x7fff "Class"
+    uint16 class mask 0x7fff "Class"
         IN  = 1
         CH  = 3
         ANY = 255
@@ -73,55 +73,55 @@ Object<main> MDNS_RR
     bits class flush 15 1 "Cache flush"
         No flush = 0
         Flush    = 1
-    required uint32 ttl "Time to live"
-    required uint16 rdlength "Data length"
+    uint32 ttl "Time to live"
+    uint16 rdlength "Data length"
 
     scope rdlength
         when type == 1:
-            required ip4 rdata "Address"
+            ip4 rdata "Address"
         when type == 28:
-            required ip6 rdata "Address"
+            ip6 rdata "Address"
         when type == 12:
             # PTR: DNS-SD uses these to enumerate service instances.
             # e.g. _http._tcp.local. PTR mydevice._http._tcp.local.
-            required dnsname rdata "Domain name"
+            dnsname rdata "Domain name"
         when type == 5:
-            required dnsname rdata "CNAME"
+            dnsname rdata "CNAME"
         when type == 2:
-            required dnsname rdata "Name server"
+            dnsname rdata "Name server"
         when type == 15:
-            required uint16 preference "Preference"
-            required dnsname rdata "Mail exchange"
+            uint16 preference "Preference"
+            dnsname rdata "Mail exchange"
         when type == 33:
             # SRV: resolves a service instance to host + port.
             # priority / weight guide client selection among multiple instances.
-            required uint16 priority "Priority"
-            required uint16 weight "Weight"
-            required uint16 port "Port"
-            required dnsname rdata "Target"
+            uint16 priority "Priority"
+            uint16 weight "Weight"
+            uint16 port "Port"
+            dnsname rdata "Target"
         when type == 6:
-            required dnsname rdata "Primary name server"
-            required dnsname rname "Responsible mailbox"
-            required uint32 serial "Serial"
-            required uint32 refresh "Refresh"
-            required uint32 retry "Retry"
-            required uint32 expire "Expire"
-            required uint32 minimum "Minimum TTL"
+            dnsname rdata "Primary name server"
+            dnsname rname "Responsible mailbox"
+            uint32 serial "Serial"
+            uint32 refresh "Refresh"
+            uint32 retry "Retry"
+            uint32 expire "Expire"
+            uint32 minimum "Minimum TTL"
         when type == 16:
             # TXT: DNS-SD metadata — length-prefixed key=value strings with no
             # count, so we loop until the rdata scope is exhausted.
             repeat until end as txt
                 label "%s" rdata
-                required uint8 txtlen "Length"
-                required str[txtlen] rdata "Text"
+                uint8 txtlen "Length"
+                str[txtlen] rdata "Text"
         when type == 41:
             # OPT: EDNS0 options pseudo-RR; treat as opaque.
-            required payload rdata "Options"
+            payload rdata "Options"
         when type == 47:
-            required dnsname rdata "Next domain name"
+            dnsname rdata "Next domain name"
         when type == 65:
             # HTTPS / SVCB: treat rdata as raw bytes until a full parser exists.
-            required payload rdata "HTTPS parameters"
+            payload rdata "HTTPS parameters"
 
 # ── mDNS message ─────────────────────────────────────────────────────────────
 
@@ -131,8 +131,8 @@ Object<main> mDNS
 
     # Header — identical to DNS.  In mDNS queries the id is always 0x0000;
     # a non-zero id signals a legacy unicast DNS query tunnelled over port 5353.
-    required uint16 id "Transaction ID"
-    required uint16 flags "Flags"
+    uint16 id "Transaction ID"
+    uint16 flags "Flags"
         bits flags qr      15 1 "Response"
             Query    = 0
             Response = 1
@@ -159,10 +159,10 @@ Object<main> mDNS
             NXDomain = 3
             NotImp   = 4
             Refused  = 5
-    required uint16 questions  "Questions"
-    required uint16 answers    "Answer RRs"
-    required uint16 authority  "Authority RRs"
-    required uint16 additional "Additional RRs"
+    uint16 questions  "Questions"
+    uint16 answers    "Answer RRs"
+    uint16 authority  "Authority RRs"
+    uint16 additional "Additional RRs"
 
     # ── Questions ─────────────────────────────────────────────────────────────
     # Each question carries a name, a type, and a class.  The QU bit (bit 15 of
@@ -171,8 +171,8 @@ Object<main> mDNS
     # _<service>._tcp.local. or _<service>._udp.local.
     repeat questions as query "Queries"
         label "%s: type %s, class %s" qname, qtype, qclass
-        required dnsname qname "Name"
-        required uint16 qtype "Type"
+        dnsname qname "Name"
+        uint16 qtype "Type"
             A     = 1
             NS    = 2
             CNAME = 5
@@ -187,7 +187,7 @@ Object<main> mDNS
             NSEC  = 47
             HTTPS = 65
             ANY   = 255
-        required uint16 qclass mask 0x7fff "Class"
+        uint16 qclass mask 0x7fff "Class"
             IN   = 1
             CH   = 3
             NONE = 254
@@ -238,10 +238,10 @@ Object<main> mDNS
 # catches those packets so the mDNS decoder is preferred over a plain DNS decode
 # on port 5353.
 
-rule udp.content "\x00\x00"            => mDNS
+weak rule udp.content "\x00\x00"            => mDNS
 rule udp.content@2 "\x00\x00\x00\x01" => mDNS
-rule udp.content@4 "\x00\x01"         => mDNS
-rule udp.content@2 "\x84\x00"         => mDNS
+weak rule udp.content@4 "\x00\x01"         => mDNS
+weak rule udp.content@2 "\x84\x00"         => mDNS
 
 # ── Port rule (secondary — fallback when content rules do not match) ──────────
 rule udp.port == 5353 => mDNS

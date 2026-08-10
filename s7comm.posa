@@ -33,22 +33,22 @@ Object<main> S7comm
     # ── TPKT Header (RFC 1006) — 4 bytes ─────────────────────────────────────
     # version is always 3.  reserved is always 0.
     # tpkt_length covers the entire PDU including this 4-byte header.
-    required uint8  version       "TPKT Version"
-    required uint8  tpkt_reserved "TPKT Reserved"
-    required uint16 tpkt_length   "TPKT Length"
+    uint8  version       "TPKT Version"
+    uint8  tpkt_reserved "TPKT Reserved"
+    uint16 tpkt_length   "TPKT Length"
 
     # ── COTP Header (ISO 8073 / RFC 905) ─────────────────────────────────────
     # cotp_length = header byte count minus 1 (a value of 2 means 3 header bytes).
     # pdu_type selects the COTP PDU class; only DT Data (0xF0) carries S7comm.
-    required uint8  cotp_length  "COTP Header Length"
-    required uint8  pdu_type     "COTP PDU Type"
+    uint8  cotp_length  "COTP Header Length"
+    uint8  pdu_type     "COTP PDU Type"
         0xe0 = "CR Connection Request"
         0xd0 = "CC Connection Confirm"
         0xf0 = "DT Data"
 
     # last_data_unit byte: bit 7 = end-of-transmission flag, bits 6-0 = seq number.
     # For S7comm DT frames this byte is always 0x80 (last unit, seq 0).
-    required uint8  last_data_unit "Last Data Unit Byte"
+    uint8  last_data_unit "Last Data Unit Byte"
     bits last_data_unit last_unit  7 1 "Last Data Unit (EOT)"
     bits last_data_unit eot_seq    0 7 "EOT Sequence Number"
 
@@ -60,17 +60,17 @@ Object<main> S7comm
     # error_length = byte count of the data block that follows the parameter block.
     # function_code = parameters[0]; determines the operation being requested.
     when pdu_type == 0xf0:
-        required uint8  protocol_id   "S7 Protocol ID"
-        required uint8  message_type  "Message Type"
+        uint8  protocol_id   "S7 Protocol ID"
+        uint8  message_type  "Message Type"
             0x01 = "Job Request"
             0x02 = "Ack"
             0x03 = "Ack-Data"
             0x07 = "Userdata"
-        required uint16 s7_reserved   "Reserved"
-        required uint16 seq_num       "Sequence Number"
-        required uint16 data_length   "Parameter Length"
-        required uint16 error_length  "Data Length"
-        required uint8  function_code "Function Code"
+        uint16 s7_reserved   "Reserved"
+        uint16 seq_num       "Sequence Number"
+        uint16 data_length   "Parameter Length"
+        uint16 error_length  "Data Length"
+        uint8  function_code "Function Code"
             0x04 = "Read Variable"
             0x05 = "Write Variable"
             0x1a = "Request Download"
@@ -93,7 +93,7 @@ Object<main> S7comm
 #
 # Rule 1: TPKT version byte 0x03 followed by reserved byte 0x00.
 #         Unique to RFC 1006 TPKT framing; covers all ISO-TSAP traffic on any port.
-rule tcp.content "\x03\x00" => S7comm
+weak rule tcp.content "\x03\x00" => S7comm
 
 # Rule 2: COTP DT Data PDU at offset 4 within a TPKT frame.
 #         Bytes: cotp_length=0x02, pdu_type=0xF0, last_data_unit=0x80 (EOT, seq 0).

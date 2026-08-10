@@ -27,18 +27,18 @@ Object<main> SNMP
     col "SNMP"
 
     # ── Outer BER SEQUENCE ────────────────────────────────────────────────────
-    required uint8 sequence_tag = 0x30
+    uint8 sequence_tag = 0x30
         0x30 = "SEQUENCE"
 
-    required uint8 sequence_length "Sequence Length"
+    uint8 sequence_length "Sequence Length"
 
     # ── version INTEGER ───────────────────────────────────────────────────────
-    required uint8 version_tag = 0x02
+    uint8 version_tag = 0x02
         0x02 = "INTEGER"
 
-    required uint8 version_tag_length "Version Length"
+    uint8 version_tag_length "Version Length"
 
-    required uint8 version "Version"
+    uint8 version "Version"
         0 = "SNMPv1"
         1 = "SNMPv2c"
         3 = "SNMPv3"
@@ -50,15 +50,15 @@ Object<main> SNMP
         payload v3_message "SNMPv3 Message"
     else:
         # SNMPv1 / SNMPv2c: community OCTET STRING (tag 0x04)
-        required uint8 community_tag = 0x04
+        uint8 community_tag = 0x04
             0x04 = "OCTET STRING"
 
-        required uint8 community_length "Community Length"
+        uint8 community_length "Community Length"
 
-        required str[community_length] community_string "Community String"
+        str[community_length] community_string "Community String"
 
         # PDU type — context-class constructed tag (0xA0–0xA8)
-        required uint8 pdu_type "PDU Type"
+        uint8 pdu_type "PDU Type"
             0xA0 = "GetRequest"
             0xA1 = "GetNextRequest"
             0xA2 = "Response"
@@ -69,23 +69,23 @@ Object<main> SNMP
             0xA7 = "SNMPv2-Trap"
             0xA8 = "Report"
 
-        required uint8 pdu_length "PDU Length"
+        uint8 pdu_length "PDU Length"
 
         # request-id INTEGER (tag 0x02, variable length 1–4 bytes)
-        required uint8 req_id_tag = 0x02
+        uint8 req_id_tag = 0x02
             0x02 = "INTEGER"
 
-        required uint8 req_id_length "Request-ID Length"
+        uint8 req_id_length "Request-ID Length"
 
-        required bytes[req_id_length] request_id "Request-ID"
+        bytes[req_id_length] request_id "Request-ID"
 
         # error-status INTEGER
-        required uint8 error_status_tag = 0x02
+        uint8 error_status_tag = 0x02
             0x02 = "INTEGER"
 
-        required uint8 error_status_length "Error-Status Length"
+        uint8 error_status_length "Error-Status Length"
 
-        required uint8 error_status "Error-Status"
+        uint8 error_status "Error-Status"
             0  = "noError"
             1  = "tooBig"
             2  = "noSuchName"
@@ -107,12 +107,12 @@ Object<main> SNMP
             18 = "inconsistentName"
 
         # error-index INTEGER
-        required uint8 error_index_tag = 0x02
+        uint8 error_index_tag = 0x02
             0x02 = "INTEGER"
 
-        required uint8 error_index_length "Error-Index Length"
+        uint8 error_index_length "Error-Index Length"
 
-        required uint8 error_index "Error-Index"
+        uint8 error_index "Error-Index"
 
         # Remaining bytes: VarBindList SEQUENCE OF VarBind
         payload varbinds "Variable Bindings"
@@ -123,7 +123,7 @@ Object<main> SNMP
 # Content rule first: SEQUENCE tag 0x30 at byte 0 catches non-standard ports.
 # Note: 0x30 is also used by TLS, LDAP, and other BER protocols — the port
 # rules below narrow the match when multiple BER protocols are on the wire.
-rule udp.content@0 "\x30" => SNMP
+weak rule udp.content@0 "\x30" => SNMP
 rule udp.port == 161 => SNMP
 rule udp.port == 162 => SNMP
 

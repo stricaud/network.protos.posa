@@ -27,8 +27,8 @@
 Object<main> RR
     abbrev "dns"
 
-    required dnsname name "Name"
-    required uint16 type "Type"
+    dnsname name "Name"
+    uint16 type "Type"
         A = 1
         NS = 2
         CNAME = 5
@@ -42,60 +42,60 @@ Object<main> RR
         OPT = 41
         NSEC = 47
         HTTPS = 65
-    required uint16 class mask 0x7fff "Class"
+    uint16 class mask 0x7fff "Class"
         IN = 1
         CH = 3
         ANY = 255
     # mDNS reuses the top class bit to mean "flush your cache for this name"
     bits class flush 15 1 "Cache flush"
-    required uint32 ttl "Time to live"
-    required uint16 rdlength "Data length"
+    uint32 ttl "Time to live"
+    uint16 rdlength "Data length"
 
     scope rdlength
         when type == 1:
-            required ip4 rdata "Address"
+            ip4 rdata "Address"
         when type == 28:
-            required ip6 rdata "Address"
+            ip6 rdata "Address"
         when type == 12:
-            required dnsname rdata "Domain name"
+            dnsname rdata "Domain name"
         when type == 5:
-            required dnsname rdata "CNAME"
+            dnsname rdata "CNAME"
         when type == 2:
-            required dnsname rdata "Name server"
+            dnsname rdata "Name server"
         when type == 15:
-            required uint16 preference "Preference"
-            required dnsname rdata "Mail exchange"
+            uint16 preference "Preference"
+            dnsname rdata "Mail exchange"
         when type == 33:
-            required uint16 priority "Priority"
-            required uint16 weight "Weight"
-            required uint16 port "Port"
-            required dnsname rdata "Target"
+            uint16 priority "Priority"
+            uint16 weight "Weight"
+            uint16 port "Port"
+            dnsname rdata "Target"
         when type == 6:
-            required dnsname rdata "Primary name server"
-            required dnsname rname "Responsible mailbox"
-            required uint32 serial "Serial"
-            required uint32 refresh "Refresh"
-            required uint32 retry "Retry"
-            required uint32 expire "Expire"
-            required uint32 minimum "Minimum TTL"
+            dnsname rdata "Primary name server"
+            dnsname rname "Responsible mailbox"
+            uint32 serial "Serial"
+            uint32 refresh "Refresh"
+            uint32 retry "Retry"
+            uint32 expire "Expire"
+            uint32 minimum "Minimum TTL"
         # TXT is a run of length-prefixed strings — "model=J96AP", "osxvers=21", …
         # There is no count for them, so repeat until the rdata scope runs out.
         when type == 16:
             repeat until end as txt
                 label "%s" rdata
-                required uint8 txtlen "Length"
-                required str[txtlen] rdata "Text"
+                uint8 txtlen "Length"
+                str[txtlen] rdata "Text"
         when type == 41:
-            required payload rdata "Options"
+            payload rdata "Options"
         when type == 47:
-            required dnsname rdata "Next domain name"
+            dnsname rdata "Next domain name"
 
 Object<main> DNS
     abbrev "dns"
     col "DNS"
 
-    required uint16 id "Transaction ID"
-    required uint16 flags "Flags"
+    uint16 id "Transaction ID"
+    uint16 flags "Flags"
         bits flags qr     15 1 "Response"
             Query = 0
             Response = 1
@@ -116,10 +116,10 @@ Object<main> DNS
             NXDomain = 3
             NotImp = 4
             Refused = 5
-    required uint16 questions "Questions"
-    required uint16 answers "Answer RRs"
-    required uint16 authority "Authority RRs"
-    required uint16 additional "Additional RRs"
+    uint16 questions "Questions"
+    uint16 answers "Answer RRs"
+    uint16 authority "Authority RRs"
+    uint16 additional "Additional RRs"
 
     # ── Queries ───────────────────────────────────────────────────────────────
     # A question is a name, a type, and a class. In mDNS the top class bit is the
@@ -127,8 +127,8 @@ Object<main> DNS
     # on its own — that is what `mask` and `bits` are for.
     repeat questions as query "Queries"
         label "%s: type %s, class %s" qname, qtype, qclass
-        required dnsname qname "Name"
-        required uint16 qtype "Type"
+        dnsname qname "Name"
+        uint16 qtype "Type"
             A = 1
             NS = 2
             CNAME = 5
@@ -143,7 +143,7 @@ Object<main> DNS
             NSEC = 47
             HTTPS = 65
             ANY = 255
-        required uint16 qclass mask 0x7fff "Class"
+        uint16 qclass mask 0x7fff "Class"
             IN = 1
             CH = 3
             NONE = 254

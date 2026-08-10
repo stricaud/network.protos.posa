@@ -38,7 +38,7 @@ Object<main> MQTT
     col "MQTT"
 
     # ── Fixed Header — byte 0 ─────────────────────────────────────────────────
-    required uint8 type_flags "Fixed Header"
+    uint8 type_flags "Fixed Header"
 
     bits type_flags msg_type 4 4 "Message Type"
         RESERVED    = 0
@@ -75,7 +75,7 @@ Object<main> MQTT
     # follow; max 4 bytes encodes up to 268,435,455 bytes).  The single-byte
     # form covers payloads up to 127 bytes, which is the common case for IoT.
     # Multi-byte remaining-length packets are not further decoded beyond this byte.
-    required uint8 remaining_length "Remaining Length"
+    uint8 remaining_length "Remaining Length"
 
     # All variable-header and payload fields are bounded to remaining_length bytes.
     scope remaining_length
@@ -87,32 +87,32 @@ Object<main> MQTT
     # mandatory UTF-8 Client ID; Will topic/message, username, and password
     # follow conditionally on the connect_flags bits (not decoded here).
     when msg_type == 1:
-        required uint16 proto_name_len "Protocol Name Length"
-        required str[proto_name_len] proto_name "Protocol Name"
-        required uint8 protocol_level "Protocol Level"
+        uint16 proto_name_len "Protocol Name Length"
+        str[proto_name_len] proto_name "Protocol Name"
+        uint8 protocol_level "Protocol Level"
             MQTT 3.1   = 3
             MQTT 3.1.1 = 4
             MQTT 5.0   = 5
-        required uint8 connect_flags "Connect Flags"
+        uint8 connect_flags "Connect Flags"
         bits connect_flags username_flag 7 1 "User Name Flag"
         bits connect_flags password_flag 6 1 "Password Flag"
         bits connect_flags will_retain   5 1 "Will RETAIN"
         bits connect_flags will_qos      3 2 "Will QoS"
         bits connect_flags will_flag     2 1 "Will Flag"
         bits connect_flags clean_session 1 1 "Clean Session"
-        required uint16 keep_alive "Keep Alive (seconds)"
+        uint16 keep_alive "Keep Alive (seconds)"
         # Payload — Client ID is mandatory; conditional fields are not decoded here
-        required uint16 client_id_len "Client ID Length"
-        required str[client_id_len] client_id "Client ID"
+        uint16 client_id_len "Client ID Length"
+        str[client_id_len] client_id "Client ID"
 
     # ── CONNACK ───────────────────────────────────────────────────────────────
     # Broker's response to CONNECT.  A non-zero return code means the broker
     # refused the connection; the spec requires the TCP session to be closed
     # by the broker after sending a non-zero CONNACK.
     when msg_type == 2:
-        required uint8 connack_flags "Connect Acknowledge Flags"
+        uint8 connack_flags "Connect Acknowledge Flags"
         bits connack_flags session_present 0 1 "Session Present"
-        required uint8 return_code "Connect Return Code"
+        uint8 return_code "Connect Return Code"
             Accepted              = 0
             Unacceptable Protocol = 1
             Identifier Rejected   = 2
@@ -125,12 +125,12 @@ Object<main> MQTT
     # The Topic Name is always present.  QoS > 0 messages include a Packet
     # Identifier in the variable header to correlate acknowledgements.
     when msg_type == 3:
-        required uint16 topic_len "Topic Name Length"
-        required str[topic_len] topic "Topic Name"
+        uint16 topic_len "Topic Name Length"
+        str[topic_len] topic "Topic Name"
         when qos == 1:
-            required uint16 packet_id "Packet Identifier"
+            uint16 packet_id "Packet Identifier"
         when qos == 2:
-            required uint16 packet_id "Packet Identifier"
+            uint16 packet_id "Packet Identifier"
         payload message_data "Message Payload"
 
     # ── QoS acknowledgement flow ──────────────────────────────────────────────
@@ -139,27 +139,27 @@ Object<main> MQTT
     # PUBREL  (6): QoS 2 phase 2 — sender releases the message
     # PUBCOMP (7): QoS 2 phase 3 — receiver confirms completion
     when msg_type == 4:
-        required uint16 packet_id "Packet Identifier"
+        uint16 packet_id "Packet Identifier"
 
     when msg_type == 5:
-        required uint16 packet_id "Packet Identifier"
+        uint16 packet_id "Packet Identifier"
 
     when msg_type == 6:
-        required uint16 packet_id "Packet Identifier"
+        uint16 packet_id "Packet Identifier"
 
     when msg_type == 7:
-        required uint16 packet_id "Packet Identifier"
+        uint16 packet_id "Packet Identifier"
 
     # ── SUBSCRIBE ─────────────────────────────────────────────────────────────
     # Client requests one or more topic filter subscriptions.  The reserved
     # bits in the fixed header are defined as 0b0010 by the specification,
     # making the first byte always 0x82 — a reliable content-detection anchor.
     when msg_type == 8:
-        required uint16 packet_id "Packet Identifier"
+        uint16 packet_id "Packet Identifier"
         repeat until end as topic_filter "Topic Filter List"
-            required uint16 filter_len "Topic Filter Length"
-            required str[filter_len] filter_topic "Topic Filter"
-            required uint8 requested_qos "Requested QoS"
+            uint16 filter_len "Topic Filter Length"
+            str[filter_len] filter_topic "Topic Filter"
+            uint8 requested_qos "Requested QoS"
                 QoS 0 = 0
                 QoS 1 = 1
                 QoS 2 = 2
@@ -168,9 +168,9 @@ Object<main> MQTT
     # Broker acknowledges a SUBSCRIBE, one return code per requested topic filter.
     # 0x80 (128) means the broker refused that particular filter.
     when msg_type == 9:
-        required uint16 packet_id "Packet Identifier"
+        uint16 packet_id "Packet Identifier"
         repeat until end as granted_qos "Granted QoS List"
-            required uint8 sub_return_code "Return Code"
+            uint8 sub_return_code "Return Code"
                 Granted QoS 0 = 0
                 Granted QoS 1 = 1
                 Granted QoS 2 = 2
@@ -180,14 +180,14 @@ Object<main> MQTT
     # Client removes one or more topic filter subscriptions.  Reserved bits
     # are 0b0010 (same as SUBSCRIBE), making the first byte always 0xA2.
     when msg_type == 10:
-        required uint16 packet_id "Packet Identifier"
+        uint16 packet_id "Packet Identifier"
         repeat until end as unsub_filter "Topic Filter List"
-            required uint16 unsub_len "Topic Filter Length"
-            required str[unsub_len] unsub_topic "Topic Filter"
+            uint16 unsub_len "Topic Filter Length"
+            str[unsub_len] unsub_topic "Topic Filter"
 
     # ── UNSUBACK ──────────────────────────────────────────────────────────────
     when msg_type == 11:
-        required uint16 packet_id "Packet Identifier"
+        uint16 packet_id "Packet Identifier"
 
     # PINGREQ  (12): no variable header or payload; exactly 2 bytes: 0xC0 0x00
     # PINGRESP (13): no variable header or payload; exactly 2 bytes: 0xD0 0x00
@@ -205,25 +205,25 @@ Object<main> MQTT
 # CONNECT (0x10): mandatory first byte of every new MQTT TCP session.
 # The type=1 / flags=0 combination is unique to MQTT CONNECT; no other protocol
 # uses this byte as its first octet in the same context.
-rule tcp.content "\x10" => MQTT
+weak rule tcp.content "\x10" => MQTT
 
 # CONNACK (0x20): broker's mandatory first reply; covers the server→client
 # direction so both halves of a TCP stream are anchored.
-rule tcp.content "\x20" => MQTT
+weak rule tcp.content "\x20" => MQTT
 
 # PUBLISH QoS-0 no-DUP no-RETAIN (0x30): the most common IoT telemetry pattern.
 # Sensors publishing periodic readings almost universally use QoS 0.
-rule tcp.content "\x30" => MQTT
+weak rule tcp.content "\x30" => MQTT
 
 # SUBSCRIBE (0x82): spec-mandated reserved bits make this value unambiguous.
-rule tcp.content "\x82" => MQTT
+weak rule tcp.content "\x82" => MQTT
 
 # PINGREQ / PINGRESP: fixed 2-byte packets; first byte is unambiguous per type.
-rule tcp.content "\xc0" => MQTT
-rule tcp.content "\xd0" => MQTT
+weak rule tcp.content "\xc0" => MQTT
+weak rule tcp.content "\xd0" => MQTT
 
 # DISCONNECT (0xE0): clean session teardown, distinct from any other protocol.
-rule tcp.content "\xe0" => MQTT
+weak rule tcp.content "\xe0" => MQTT
 
 # ── Port Rules (secondary hints) ──────────────────────────────────────────────
 # Listed after content rules; content detection fires first on non-standard ports.

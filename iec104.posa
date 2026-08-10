@@ -25,11 +25,11 @@ Object<main> IEC104
     abbrev "iec104"
     col "IEC-104"
 
-    required uint8 start_byte = 0x68 "Start (0x68)"
-    required uint8 apdu_length       "APDU Length"
+    uint8 start_byte = 0x68 "Start (0x68)"
+    uint8 apdu_length       "APDU Length"
 
     # ── Control field byte 0 — determines frame format ──────────────────────────
-    required uint8 ctrl0             "Control Byte 0"
+    uint8 ctrl0             "Control Byte 0"
     bits ctrl0 format_type 0 2       "Format"
         0 = "I-format"
         1 = "S-format"
@@ -47,15 +47,15 @@ Object<main> IEC104
             8  = "STOPDT con"
             16 = "TESTFR act"
             32 = "TESTFR con"
-        required uint8 ctrl1 "Control Byte 1"
-        required uint8 ctrl2 "Control Byte 2"
-        required uint8 ctrl3 "Control Byte 3"
+        uint8 ctrl1 "Control Byte 1"
+        uint8 ctrl2 "Control Byte 2"
+        uint8 ctrl3 "Control Byte 3"
 
     # ── S-format: supervisory frame — receive-sequence acknowledgement only ──────
     # ctrl0 = 0x01, ctrl1 = 0x00; ctrl2+ctrl3 carry the 15-bit RSN.
     when format_type == 1:
-        required uint8 ctrl1           "Control Byte 1"
-        required le_uint16 rsn_word    "RSN Word"
+        uint8 ctrl1           "Control Byte 1"
+        le_uint16 rsn_word    "RSN Word"
         bits rsn_word recv_seq 1 15    "Receive Sequence Number"
 
     # ── I-format: information transfer — carries an ASDU ────────────────────────
@@ -63,12 +63,12 @@ Object<main> IEC104
     # RSN is encoded identically to S-format in ctrl2+ctrl3.
     else:
         bits ctrl0 ssn_lo 1 7          "SSN Low (bits 0-6)"
-        required uint8 ssn_hi          "SSN High (bits 7-14)"
-        required le_uint16 rsn_word    "RSN Word"
+        uint8 ssn_hi          "SSN High (bits 7-14)"
+        le_uint16 rsn_word    "RSN Word"
         bits rsn_word recv_seq 1 15    "Receive Sequence Number"
 
         # ── ASDU: Application Service Data Unit ──────────────────────────────────
-        required uint8 type_id         "Type ID"
+        uint8 type_id         "Type ID"
             1   = "Single-Point Information (SPS)"
             3   = "Double-Point Information (DPS)"
             5   = "Step Position Information"
@@ -119,14 +119,14 @@ Object<main> IEC104
             125 = "Segment"
             126 = "Directory"
 
-        required uint8 sq_num          "Structure Qualifier"
+        uint8 sq_num          "Structure Qualifier"
         bits sq_num sq_flag 7 1        "SQ"
             0 = "Discrete Objects"
             1 = "Sequential Elements"
         bits sq_num num_objects 0 7    "Number of Objects"
 
         # cause: LE uint16 — bits 5-0 = COT, bit6 = P/N, bit7 = T, bits 15-8 = OA
-        required le_uint16 cause       "Cause of Transmission"
+        le_uint16 cause       "Cause of Transmission"
         bits cause cot_code 0 6        "COT Code"
             1  = "Periodic/Cyclic"
             2  = "Background Scan"
@@ -175,7 +175,7 @@ Object<main> IEC104
             1 = "Test"
         bits cause orig_addr 8 8       "Originator Address"
 
-        required le_uint16 common_addr "ASDU Common Address"
+        le_uint16 common_addr "ASDU Common Address"
 
         payload objects                "Information Objects"
 
@@ -186,7 +186,7 @@ Object<main> IEC104
 # 0x68 is the fixed IEC 60870-5 start byte; reliable on non-standard ports
 # (e.g. tunnelled SCADA links or alternate TCP ports in substation networks).
 # Listed before the port rule so content detection fires first.
-rule tcp.content "\x68" => IEC104
+weak rule tcp.content "\x68" => IEC104
 
 # ── Port Rule (secondary — standard IANA assignment) ──────────────────────────
 rule tcp.port == 2404 => IEC104

@@ -153,8 +153,8 @@ rule tcp.content "delete "  => MEMCACHED
 rule tcp.content "STORED\r" => MEMCACHED
 rule tcp.content "VALUE "   => MEMCACHED
 rule tcp.content "ERROR\r"  => MEMCACHED
-rule tcp.content "\x80"     => MEMCACHED
-rule tcp.content "\x81"     => MEMCACHED
+weak rule tcp.content "\x80"     => MEMCACHED
+weak rule tcp.content "\x81"     => MEMCACHED
 
 color memcached.command == "set" || memcached.command == "add" || memcached.command == "replace" => black lightyellow
 color memcached.command == "get" || memcached.command == "gets" => black lightblue

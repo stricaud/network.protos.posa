@@ -43,7 +43,7 @@ Object<QUIC> QUIC_LONG
            "\xe0" "\xe1" "\xe2" "\xe3"
            "\xf0" "\xf1" "\xf2" "\xf3"
 
-    required uint8 first_byte "First Byte"
+    uint8 first_byte "First Byte"
     bits first_byte header_form 7 1 "Header Form"
     bits first_byte fixed_bit 6 1 "Fixed Bit"
     bits first_byte long_packet_type 4 2 "Long Packet Type"
@@ -53,17 +53,17 @@ Object<QUIC> QUIC_LONG
         3 = Retry
     bits first_byte type_specific_bits 0 4 "Type Specific Bits"
 
-    required uint32 version hex "Version"
+    uint32 version hex "Version"
         0x00000000 = Version Negotiation
         0x00000001 = QUIC v1
         0x6b3343cf = QUIC v2
         0x51303434 = Google QUIC Q044
         0x51303530 = Google QUIC Q050
 
-    required uint8 dcil "Destination Connection ID Length"
-    required bytes[dcil] dcid "Destination Connection ID"
-    required uint8 scil "Source Connection ID Length"
-    required bytes[scil] scid "Source Connection ID"
+    uint8 dcil "Destination Connection ID Length"
+    bytes[dcil] dcid "Destination Connection ID"
+    uint8 scil "Source Connection ID Length"
+    bytes[scil] scid "Source Connection ID"
 
     # Remaining bytes hold type-specific varint-encoded fields:
     #   Initial:   token_length (varint), token (bytes), length (varint),
@@ -88,7 +88,7 @@ Object<QUIC> QUIC_SHORT
            "\x60" "\x61" "\x62" "\x63"
            "\x64" "\x65" "\x66" "\x67"
 
-    required uint8 first_byte "First Byte"
+    uint8 first_byte "First Byte"
     bits first_byte header_form 7 1 "Header Form"
     bits first_byte fixed_bit 6 1 "Fixed Bit"
     bits first_byte spin_bit 5 1 "Spin Bit"
@@ -107,10 +107,10 @@ Object<QUIC> QUIC_SHORT
 rule udp.content "\xc0\x00\x00\x00\x01" => QUIC   # QUICv1 Initial (RFC 9000)
 rule udp.content "\xc0\x6b\x33\x43\xcf" => QUIC   # QUICv2 Initial (RFC 9369)
 rule udp.content "\xc0\x00\x00\x00\x00" => QUIC   # Version Negotiation
-rule udp.content "\xc0" => QUIC                    # Long Header Initial
-rule udp.content "\xd0" => QUIC                    # Long Header 0-RTT
-rule udp.content "\xe0" => QUIC                    # Long Header Handshake
-rule udp.content "\xf0" => QUIC                    # Long Header Retry
+weak rule udp.content "\xc0" => QUIC                    # Long Header Initial
+weak rule udp.content "\xd0" => QUIC                    # Long Header 0-RTT
+weak rule udp.content "\xe0" => QUIC                    # Long Header Handshake
+weak rule udp.content "\xf0" => QUIC                    # Long Header Retry
 
 # ─── Port bindings (secondary — hints when content prefix is ambiguous) ───────
 rule udp.port == 443 => QUIC

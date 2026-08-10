@@ -2,7 +2,7 @@
 # UDP port 546 (client) / 547 (server). transaction_id is a 3-byte random value.
 # Relay messages (RELAY_FORW/RELAY_REPL) use a different structure (hop-count + link/peer addr).
 Object<main> DHCPv6
-    required uint8    msg_type = 1
+    uint8    msg_type = 1
         SOLICIT      = 1
         ADVERTISE    = 2
         REQUEST      = 3
@@ -34,4 +34,4 @@ Object<main> DHCPv6
         DISCONNECT              = 34
         STATE                   = 36
         CONTACT                 = 37
-    required bytes<3> transaction_id
+    bytes<3> transaction_id

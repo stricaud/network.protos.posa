@@ -109,7 +109,7 @@ Object<main> RADIUS
     abbrev "radius"
     col "RADIUS"
 
-    required uint8 code "Code"
+    uint8 code "Code"
         1   = "Access-Request"
         2   = "Access-Accept"
         3   = "Access-Reject"
@@ -144,16 +144,16 @@ Object<main> RADIUS
         45  = "CoA-NAK"
         255 = "Reserved"
 
-    required uint8 identifier "Identifier"
-    required uint16 length "Length"
-    required bytes<16> authenticator "Authenticator"
+    uint8 identifier "Identifier"
+    uint16 length "Length"
+    bytes<16> authenticator "Authenticator"
 
     repeat until end as attribute "Attributes"
         label "%s" attr_type
-        required uint8 attr_type lookup RadiusAttributeTypes "Type"
-        required uint8 attr_length "Length"
+        uint8 attr_type lookup RadiusAttributeTypes "Type"
+        uint8 attr_length "Length"
         scope attr_length - 2
-            required payload value "Value"
+            payload value "Value"
 
     info "%s id=%u" code, identifier
 
@@ -162,7 +162,7 @@ Object<main> RADIUS
 # Content rule first: the high byte of the 16-bit Length field at offset 2 is
 # always 0x00 for any normal RADIUS packet (max 4096 bytes, so high byte <= 0x0F;
 # common packets are well under 256 bytes). This catches RADIUS on non-standard ports.
-rule udp.content@2 "\x00" => RADIUS
+weak rule udp.content@2 "\x00" => RADIUS
 # Standard authentication and accounting ports (RFC 2865 / RFC 2866).
 rule udp.port == 1812 => RADIUS
 rule udp.port == 1813 => RADIUS

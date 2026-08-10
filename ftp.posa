@@ -88,14 +88,14 @@ Object<FTP> FTP_RESPONSE
     starts "1" "2" "3" "4" "5"
 
     # str<3> so enum_name_str() can resolve the code to a label
-    required str<3> code lookup FtpResponseCodes "Response Code"
+    str<3> code lookup FtpResponseCodes "Response Code"
 
     # ' ' = final reply line; '-' = more lines follow with same code
-    required str<1> continuation "Continuation"
+    str<1> continuation "Continuation"
         " " = "Final"
         "-" = "Multi-line"
 
-    required string message until "\r\n" "Reply Text"
+    string message until "\r\n" "Reply Text"
 
     info "%s %s" code, message
 
@@ -109,14 +109,14 @@ Object<FTP> FTP_COMMAND
            "MDTM " "AUTH " "ADAT " "PROT " "PBSZ " "MIC "  "CONF " "ENC "
            "LIST " "NLST " "STAT " "HELP "
 
-    required string command until " " "Command"
+    string command until " " "Command"
 
     # Expose the username separately on USER so capture filters can name it directly.
     # All other arguments (password, path, PORT spec, …) land in the generic field.
     when command == "USER":
-        required string username until "\r\n" "Username"
+        string username until "\r\n" "Username"
     else:
-        required string argument until "\r\n" "Argument"
+        string argument until "\r\n" "Argument"
 
     # Gap auto-close: only whichever of username/argument exists is printed
     info "%s %s%s" command, username, argument
@@ -131,7 +131,7 @@ Object<FTP> FTP_COMMAND_BARE
            "PWD\r"  "SYST\r" "NOOP\r" "FEAT\r" "CCC\r"
            "LIST\r" "NLST\r" "STAT\r" "HELP\r"
 
-    required string command until "\r\n" "Command"
+    string command until "\r\n" "Command"
 
     info "%s" command
 

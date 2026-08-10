@@ -32,14 +32,14 @@ Object<WireGuard> WG_HandshakeInit
     col    "WireGuard"
     starts "\x01\x00\x00\x00"
 
-    required uint8     msg_type               = 1  "Message Type"
-    required bytes<3>  reserved                    "Reserved"
-    required le_uint32 sender_index                "Sender Index"
-    required bytes<32> unencrypted_ephemeral       "Unencrypted Ephemeral (Curve25519)"
-    required bytes<48> encrypted_static            "Encrypted Static Key"
-    required bytes<28> encrypted_timestamp         "Encrypted Timestamp (TAI64N)"
-    required bytes<16> mac1                        "MAC1"
-    required bytes<16> mac2                        "MAC2"
+    uint8     msg_type               = 1  "Message Type"
+    bytes<3>  reserved                    "Reserved"
+    le_uint32 sender_index                "Sender Index"
+    bytes<32> unencrypted_ephemeral       "Unencrypted Ephemeral (Curve25519)"
+    bytes<48> encrypted_static            "Encrypted Static Key"
+    bytes<28> encrypted_timestamp         "Encrypted Timestamp (TAI64N)"
+    bytes<16> mac1                        "MAC1"
+    bytes<16> mac2                        "MAC2"
 
     info "Handshake Initiation  Sender=0x%x" sender_index
 
@@ -52,14 +52,14 @@ Object<WireGuard> WG_HandshakeResp
     col    "WireGuard"
     starts "\x02\x00\x00\x00"
 
-    required uint8     msg_type               = 2  "Message Type"
-    required bytes<3>  reserved                    "Reserved"
-    required le_uint32 sender_index                "Sender Index"
-    required le_uint32 receiver_index              "Receiver Index"
-    required bytes<32> unencrypted_ephemeral       "Unencrypted Ephemeral (Curve25519)"
-    required bytes<16> encrypted_nothing           "Encrypted Nothing"
-    required bytes<16> mac1                        "MAC1"
-    required bytes<16> mac2                        "MAC2"
+    uint8     msg_type               = 2  "Message Type"
+    bytes<3>  reserved                    "Reserved"
+    le_uint32 sender_index                "Sender Index"
+    le_uint32 receiver_index              "Receiver Index"
+    bytes<32> unencrypted_ephemeral       "Unencrypted Ephemeral (Curve25519)"
+    bytes<16> encrypted_nothing           "Encrypted Nothing"
+    bytes<16> mac1                        "MAC1"
+    bytes<16> mac2                        "MAC2"
 
     info "Handshake Response  Sender=0x%x  Receiver=0x%x" sender_index, receiver_index
 
@@ -72,11 +72,11 @@ Object<WireGuard> WG_CookieReply
     col    "WireGuard"
     starts "\x03\x00\x00\x00"
 
-    required uint8     msg_type               = 3  "Message Type"
-    required bytes<3>  reserved                    "Reserved"
-    required le_uint32 receiver_index              "Receiver Index"
-    required bytes<24> nonce                       "Nonce (XChaCha20)"
-    required bytes<32> encrypted_cookie            "Encrypted Cookie"
+    uint8     msg_type               = 3  "Message Type"
+    bytes<3>  reserved                    "Reserved"
+    le_uint32 receiver_index              "Receiver Index"
+    bytes<24> nonce                       "Nonce (XChaCha20)"
+    bytes<32> encrypted_cookie            "Encrypted Cookie"
 
     info "Cookie Reply  Receiver=0x%x" receiver_index
 
@@ -90,11 +90,11 @@ Object<WireGuard> WG_Transport
     col    "WireGuard"
     starts "\x04\x00\x00\x00"
 
-    required uint8     msg_type               = 4  "Message Type"
-    required bytes<3>  reserved                    "Reserved"
-    required le_uint32 receiver_index              "Receiver Index"
-    required le_uint64 counter                     "Counter (Replay Protection)"
-    required payload   encrypted_encapsulated_packet "Encrypted Encapsulated Packet"
+    uint8     msg_type               = 4  "Message Type"
+    bytes<3>  reserved                    "Reserved"
+    le_uint32 receiver_index              "Receiver Index"
+    le_uint64 counter                     "Counter (Replay Protection)"
+    payload   encrypted_encapsulated_packet "Encrypted Encapsulated Packet"
 
     info "Transport Data  Receiver=0x%x  Counter=%u" receiver_index, counter
 

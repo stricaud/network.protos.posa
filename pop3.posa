@@ -28,7 +28,7 @@ Object<main> POP3
     # "string until" stops at the first space; for argument-free commands (STAT,
     # NOOP, RSET, QUIT, CAPA, STLS) it stops at \r and the CRLF is left in the
     # buffer to be consumed by whichever "until \r\n" field follows.
-    required string keyword until " "            ["Command/Status"]
+    string keyword until " "            ["Command/Status"]
 
     # ── Server responses ──────────────────────────────────────────────────────
     when keyword == "+OK":

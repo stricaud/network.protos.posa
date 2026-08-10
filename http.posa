@@ -92,13 +92,13 @@ Object<HTTP> HTTP_RESPONSE
     # the group is dispatched on the first field's value, so a response is
     # recognised by its "HTTP" magic — then `seek 0` rewinds over it, and the
     # status line is read as the text it actually is
-    required uint32 magic = 0x48545450 hex "Magic"
+    uint32 magic = 0x48545450 hex "Magic"
     seek 0
-    required string version until " " "Version"
-    required string status_code until " " lookup HttpStatusCodes "Status Code"
-    required string reason until "\r\n" "Reason Phrase"
+    string version until " " "Version"
+    string status_code until " " lookup HttpStatusCodes "Status Code"
+    string reason until "\r\n" "Reason Phrase"
     kvblock headers "Headers"
-    required payload body "Body"
+    payload body "Body"
 
     info "%s %s" status_code, reason
 
@@ -111,11 +111,11 @@ Object<HTTP> HTTP_REQUEST
     # being mis-parsed as a request line.
     starts "GET " "POST " "PUT " "HEAD " "DELETE " "OPTIONS " "TRACE " "CONNECT " "PATCH "
 
-    required string method until " " "Method"
-    required string uri until " " "Request URI"
-    required string version until "\r\n" "Version"
+    string method until " " "Method"
+    string uri until " " "Request URI"
+    string version until "\r\n" "Version"
     kvblock headers "Headers"
-    required payload body "Body"
+    payload body "Body"
 
     info "%s %s %s" method, uri, version
 

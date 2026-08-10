@@ -106,13 +106,13 @@ Object<IAX2> IAX2_FULL
     abbrev "iax2"
     col "IAX2"
 
-    required uint16 src_call  hex "Source Call (F=1)"
-    required uint16 dst_call  hex "Dest Call"
-    required uint32 timestamp     "Timestamp (ms)"
-    required uint8  oseqno        "Outbound Seq No"
-    required uint8  iseqno        "Inbound Seq No"
-    required uint8  frame_type lookup IaxFrameTypes "Frame Type"
-    required uint8  subclass      "Subclass"
+    uint16 src_call  hex "Source Call (F=1)"
+    uint16 dst_call  hex "Dest Call"
+    uint32 timestamp     "Timestamp (ms)"
+    uint8  oseqno        "Outbound Seq No"
+    uint8  iseqno        "Inbound Seq No"
+    uint8  frame_type lookup IaxFrameTypes "Frame Type"
+    uint8  subclass      "Subclass"
 
     when frame_type == 6:
         payload ie_list "Information Elements"
@@ -126,8 +126,8 @@ Object<IAX2> IAX2_MINI
     abbrev "iax2"
     col "IAX2"
 
-    required uint16 src_call  hex "Source Call (F=0)"
-    required uint16 mini_ts       "Mini Timestamp (ms low 16)"
+    uint16 src_call  hex "Source Call (F=0)"
+    uint16 mini_ts       "Mini Timestamp (ms low 16)"
     payload  samples              "Voice Samples"
 
     info "IAX2 mini voice"

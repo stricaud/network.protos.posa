@@ -71,7 +71,7 @@ rule tcp.port == 9090 => THRIFT
 rule tcp.content "\x80\x01\x00\x01" => THRIFT
 rule tcp.content "\x80\x01\x00\x02" => THRIFT
 rule tcp.content "\x80\x01\x00\x04" => THRIFT
-rule tcp.content "\x82"             => THRIFT
+weak rule tcp.content "\x82"             => THRIFT
 
 color thrift.message_type == 1 => black lightyellow
 color thrift.message_type == 2 => black lightgreen

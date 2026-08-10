@@ -16,9 +16,9 @@ Object<main> BGP
     col "BGP"
 
     # ── Fixed 19-byte message header ──────────────────────────────────────────
-    required bytes<16> marker "Marker"
-    required uint16    length "Length"
-    required uint8     type   "Type"
+    bytes<16> marker "Marker"
+    uint16    length "Length"
+    uint8     type   "Type"
         OPEN                 = 1
         UPDATE               = 2
         NOTIFICATION         = 3
@@ -32,12 +32,12 @@ Object<main> BGP
     # the hold-time in seconds (0 or >= 3), and the BGP identifier (router-ID).
     # Optional parameters (capability TLVs) follow as a length-prefixed block.
     when type == 1:
-        required uint8  version          "Version"
-        required uint16 my_as            "My AS"
-        required uint16 hold_time        "Hold Time"
-        required ip4    bgp_id           "BGP Identifier"
-        required uint8  opt_param_length "Optional Parameters Length"
-        required payload opt_params      "Optional Parameters"
+        uint8  version          "Version"
+        uint16 my_as            "My AS"
+        uint16 hold_time        "Hold Time"
+        ip4    bgp_id           "BGP Identifier"
+        uint8  opt_param_length "Optional Parameters Length"
+        payload opt_params      "Optional Parameters"
 
     # ── UPDATE body (type == 2) ───────────────────────────────────────────────
     # Withdrawn routes come first as a length-prefixed list of IP prefixes.
@@ -45,25 +45,25 @@ Object<main> BGP
     # Any remaining bytes after the path attribute block are NLRI prefixes
     # being advertised for the implicit IPv4 unicast AFI/SAFI.
     when type == 2:
-        required uint16                        withdrawn_routes_length "Withdrawn Routes Length"
-        required bytes[withdrawn_routes_length] withdrawn              "Withdrawn Routes"
-        required uint16                        path_attr_length        "Path Attributes Length"
-        required bytes[path_attr_length]        path_attrs             "Path Attributes"
-        required payload nlri                                          "NLRI"
+        uint16                        withdrawn_routes_length "Withdrawn Routes Length"
+        bytes[withdrawn_routes_length] withdrawn              "Withdrawn Routes"
+        uint16                        path_attr_length        "Path Attributes Length"
+        bytes[path_attr_length]        path_attrs             "Path Attributes"
+        payload nlri                                          "NLRI"
 
     # ── NOTIFICATION body (type == 3) ─────────────────────────────────────────
     # Error code identifies the category; error subcode refines it.
     # The optional data field carries diagnostic context (e.g. the offending header).
     when type == 3:
-        required uint8  error_code    "Error Code"
+        uint8  error_code    "Error Code"
             MESSAGE_HEADER_ERROR = 1
             OPEN_MESSAGE_ERROR   = 2
             UPDATE_MESSAGE_ERROR = 3
             HOLD_TIMER_EXPIRED   = 4
             FSM_ERROR            = 5
             CEASE                = 6
-        required uint8  error_subcode "Error Subcode"
-        required payload data         "Data"
+        uint8  error_subcode "Error Subcode"
+        payload data         "Data"
 
     # ── KEEPALIVE body (type == 4) — empty ───────────────────────────────────
     # No fields after the header. Total message length is always 19 bytes.
@@ -71,11 +71,11 @@ Object<main> BGP
     # ── ROUTE-REFRESH body (type == 5, RFC 2918) ──────────────────────────────
     # Requests the peer to re-advertise all routes for the specified AFI/SAFI.
     when type == 5:
-        required uint16 afi  "Address Family Identifier"
+        uint16 afi  "Address Family Identifier"
             IPv4 = 1
             IPv6 = 2
-        required uint8  res  "Reserved"
-        required uint8  safi "Subsequent AFI"
+        uint8  res  "Reserved"
+        uint8  safi "Subsequent AFI"
             UNICAST   = 1
             MULTICAST = 2
             MPLS      = 4

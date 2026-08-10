@@ -33,11 +33,11 @@ Object<IRC> IRC_SERVER
     # Server messages always start with ':' (0x3A). Read that byte as a
     # discriminator so the group engine selects this variant; then rewind to
     # position 0 so the prefix string field captures the ':' as well.
-    required uint8 colon = 0x3A "Colon"
+    uint8 colon = 0x3A "Colon"
     seek 0
-    required string prefix  until " " "Prefix"
-    required string command until " \r" "Command"
-    required string params  until "\r\n" "Parameters"
+    string prefix  until " " "Prefix"
+    string command until " \r" "Command"
+    string params  until "\r\n" "Parameters"
 
     info "%s %s" command, params
 
@@ -56,8 +56,8 @@ Object<IRC> IRC_CLIENT
            "STATS " "LINKS" "TIME" "CONNECT " "TRACE " "ADMIN" "INFO"
            "CAP " "AUTHENTICATE " "ERROR "
 
-    required string command until " \r" "Command"
-    required string params  until "\r\n" "Parameters"
+    string command until " \r" "Command"
+    string params  until "\r\n" "Parameters"
 
     info "%s %s" command, params
 

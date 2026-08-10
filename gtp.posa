@@ -202,12 +202,12 @@ rule udp.port == 2152 => GTP
 rule udp.port == 2123 => GTP
 rule udp.port == 3386 => GTP
 
-rule udp.content "\x20\xff" => GTP
-rule udp.content "\x32\xff" => GTP
-rule udp.content "\x32\x01" => GTP
-rule udp.content "\x32\x02" => GTP
-rule udp.content "\x40\x20" => GTP
-rule udp.content "\x48\x20" => GTP
+weak rule udp.content "\x20\xff" => GTP
+weak rule udp.content "\x32\xff" => GTP
+weak rule udp.content "\x32\x01" => GTP
+weak rule udp.content "\x32\x02" => GTP
+weak rule udp.content "\x40\x20" => GTP
+weak rule udp.content "\x48\x20" => GTP
 
 color gtp.message_type == 255 => black lightblue
 color gtp.message_type == 1 || gtp.message_type == 2 => black lightgray

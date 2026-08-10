@@ -1,0 +1,70 @@
+# hsr.posa — HSR, High-availability Seamless Redundancy
+# Reference: IEC 62439-3 Clause 5
+# Ethertype 0x892F
+#
+# HSR gives substation and factory Ethernet zero-downtime redundancy without a
+# reconvergence protocol: a node on an HSR ring sends *two copies* of every
+# frame, one in each direction around the ring, each tagged with the same
+# sequence number.  The receiver takes whichever arrives first and discards the
+# duplicate.  A single break anywhere in the ring costs no frames at all —
+# which is why it is used for IEC 61850 GOOSE and sampled-value traffic where
+# a protection relay cannot wait for spanning tree.
+#
+# The 6-octet HSR tag sits directly after the source MAC, in place of the
+# ethertype, and carries the original ethertype at its end:
+#
+#   +-------------+-------------+-------------+
+#   | path+LSDU 2 | seq. nr. 2  | ethertype 2 |
+#   +-------------+-------------+-------------+
+#
+# The duplicate pair is identified by (source MAC, sequence number); the lane
+# ID bit says which way round the ring this copy travelled.
+
+Object<main> HSR
+    abbrev "hsr"
+    col "HSR"
+
+    uint16 path_lsdu hex "Path / LSDU Size"
+    # The 4-bit path field is read two ways: as one value, and split into the
+    # 3-bit network ID and the 1-bit lane ID that HSR actually uses.
+    bits path_lsdu path 12 4 "Path"
+    bits path_lsdu netid 13 3 "Network id"
+    bits path_lsdu laneid 12 1 "Lane id"
+        0 = "Lane A"
+        1 = "Lane B"
+    # Size of the frame from here to the end of the payload.
+    bits path_lsdu lsdu_size 0 12 "LSDU size"
+
+    # Incremented once per frame *pair*; both copies carry the same value,
+    # which is what lets the receiver discard the second one.
+    uint16 sequence_nr "Sequence number"
+
+    # The ethertype of the frame HSR is carrying — 0x88B8 GOOSE, 0x88BA
+    # sampled values, 0x0800 IPv4.
+    uint16 type hex "Type"
+
+    payload data "Payload"
+
+    info "HSR lane=%s seq=%u type=0x%x" laneid, sequence_nr, type
+
+
+# ── Ethertype Rule ────────────────────────────────────────────────────────────
+rule eth.type == 0x892f => HSR
+
+
+# ── Coloring Rules ────────────────────────────────────────────────────────────
+# Most specific first; first match wins.
+
+# GOOSE — IEC 61850 protection trips and interlocking, the most time-critical
+# traffic on a substation network.
+color hsr.type == 0x88b8 => white red
+
+# Sampled values — continuous current/voltage measurement streams.
+color hsr.type == 0x88ba => black lightyellow
+
+# The two ring directions, so a missing lane is visible at a glance.
+color hsr.laneid == 0 => black lightgreen
+color hsr.laneid == 1 => black lightblue
+
+# Protocol catch-all.
+color hsr => black lightgray

@@ -47,9 +47,9 @@ Object<main> DRDA
     abbrev "drda"
     col "DRDA"
 
-    required uint16 length      "DDM Length"
-    required uint8  magic = 0xD0 hex "Magic"
-    required uint8  format      hex "Format"
+    uint16 length      "DDM Length"
+    uint8  magic = 0xD0 hex "Magic"
+    uint8  format      hex "Format"
 
     bits format chained   7 1 "Chained"
     bits format continued 6 1 "Continued"
@@ -59,9 +59,9 @@ Object<main> DRDA
         Object       = 3
         Correlation  = 4
 
-    required uint16 correlid    "Correlation ID"
-    required uint16 length2     "Length (echo)"
-    required uint16 codepoint lookup DrdaCodepoints "Codepoint"
+    uint16 correlid    "Correlation ID"
+    uint16 length2     "Length (echo)"
+    uint16 codepoint lookup DrdaCodepoints "Codepoint"
 
     payload body "DDM Object Data"
 
@@ -72,7 +72,7 @@ rule tcp.port == 50000 => DRDA
 rule tcp.port == 446   => DRDA
 rule tcp.port == 447   => DRDA
 # DDM magic byte at offset 4
-rule tcp.content@4 "\xd0" => DRDA
+weak rule tcp.content@4 "\xd0" => DRDA
 
 color drda.dss_type == 2 => black lightgreen
 color drda.dss_type == 1 => black lightyellow

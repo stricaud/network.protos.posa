@@ -3,6 +3,6 @@
 # ttl is how long a receiving device should hold CDP information (seconds).
 # Type-Length-Value records follow the 4-byte fixed header.
 Object<main> CDP
-    required uint8  version = 2
-    required uint8  ttl = 180
-    required uint16 checksum = 0
+    uint8  version = 2
+    uint8  ttl = 180
+    uint16 checksum = 0

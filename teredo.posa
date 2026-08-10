@@ -69,8 +69,8 @@ Object<GROUP> TEREDO
 
 rule udp.port == 3544 => TEREDO
 
-rule udp.content "\x00\x01" => TEREDO
-rule udp.content "\x00\x00" => TEREDO
+weak rule udp.content "\x00\x01" => TEREDO
+weak rule udp.content "\x00\x00" => TEREDO
 
 color teredo.indicator == 0x0001 => black lightyellow
 color teredo.indicator == 0x0000 => black lightblue

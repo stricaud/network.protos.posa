@@ -36,16 +36,16 @@ Object<SSDP> SSDP_RESPONSE
     # The group dispatcher reads the first four bytes to distinguish a response
     # ("HTTP") from the request types above.  0x48545450 = big-endian "HTTP".
     # seek 0 rewinds so the full status line is re-read as human-readable text.
-    required uint32 magic = 0x48545450 hex "Magic"
+    uint32 magic = 0x48545450 hex "Magic"
     seek 0
 
-    required string version     until " "    "Version"
-    required string status_code until " "    "Status-Code"
-    required string reason      until "\r\n" "Reason-Phrase"
+    string version     until " "    "Version"
+    string status_code until " "    "Status-Code"
+    string reason      until "\r\n" "Reason-Phrase"
 
     kvblock headers "Headers"
 
-    required payload body "Message Body"
+    payload body "Message Body"
 
     info "%s %s  ST: %s" status_code, reason, st
 
@@ -62,13 +62,13 @@ Object<SSDP> SSDP_SEARCH
     # or a URI path of an unrelated protocol.
     starts "M-SEARCH "
 
-    required string method         until " "    "Method"
-    required string request_target until " "    "Request-Target"
-    required string version        until "\r\n" "Version"
+    string method         until " "    "Method"
+    string request_target until " "    "Request-Target"
+    string version        until "\r\n" "Version"
 
     kvblock headers "Headers"
 
-    required payload body "Message Body"
+    payload body "Message Body"
 
     info "M-SEARCH  ST: %s" st
 
@@ -86,13 +86,13 @@ Object<SSDP> SSDP_NOTIFY
     # or any other mid-stream text that happens to start with the word.
     starts "NOTIFY "
 
-    required string method         until " "    "Method"
-    required string request_target until " "    "Request-Target"
-    required string version        until "\r\n" "Version"
+    string method         until " "    "Method"
+    string request_target until " "    "Request-Target"
+    string version        until "\r\n" "Version"
 
     kvblock headers "Headers"
 
-    required payload body "Message Body"
+    payload body "Message Body"
 
     info "NOTIFY  NTS: %s  NT: %s" nts, nt
 

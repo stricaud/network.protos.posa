@@ -8,7 +8,7 @@ Object<main> WebSocket
     col "WebSocket"
 
     # Byte 0: FIN flag, reserved bits, and opcode
-    required uint8 flags_opcode "Flags/Opcode"
+    uint8 flags_opcode "Flags/Opcode"
     bits flags_opcode fin      7 1 "FIN"
     bits flags_opcode rsv1     6 1 "RSV1"
     bits flags_opcode rsv2     5 1 "RSV2"
@@ -22,19 +22,19 @@ Object<main> WebSocket
         PONG         = 10
 
     # Byte 1: MASK flag and 7-bit base payload length
-    required uint8 mask_len_byte "Mask/Length"
+    uint8 mask_len_byte "Mask/Length"
     bits mask_len_byte mask        7 1 "Mask"
     bits mask_len_byte payload_len 0 7 "Payload Length"
 
     # Extended payload length — only present when base payload_len indicates it
     when payload_len == 126:
-        required uint16 ext_payload_len "Extended Payload Length"
+        uint16 ext_payload_len "Extended Payload Length"
     when payload_len == 127:
-        required uint64 ext_payload_len_64 "Extended Payload Length (64-bit)"
+        uint64 ext_payload_len_64 "Extended Payload Length (64-bit)"
 
     # Masking key — 4 bytes, present only when MASK bit is set (client frames)
     when mask == 1:
-        required bytes<4> masking_key "Masking Key"
+        bytes<4> masking_key "Masking Key"
 
     # Payload data (XOR-masked when MASK bit is set)
     payload
@@ -45,11 +45,11 @@ Object<main> WebSocket
 # Match the most common WebSocket frame first bytes: FIN(1) + opcode
 # 0x81 = FIN + TEXT, 0x82 = FIN + BINARY
 # 0x88 = FIN + CLOSE, 0x89 = FIN + PING, 0x8A = FIN + PONG
-rule tcp.content "\x81" => WebSocket
-rule tcp.content "\x82" => WebSocket
-rule tcp.content "\x88" => WebSocket
-rule tcp.content "\x89" => WebSocket
-rule tcp.content "\x8A" => WebSocket
+weak rule tcp.content "\x81" => WebSocket
+weak rule tcp.content "\x82" => WebSocket
+weak rule tcp.content "\x88" => WebSocket
+weak rule tcp.content "\x89" => WebSocket
+weak rule tcp.content "\x8A" => WebSocket
 
 # ── Port bindings (SECONDARY — standard and common WebSocket ports) ──────────
 rule tcp.port == 80   => WebSocket

@@ -33,10 +33,10 @@ Object<main> ACTIVISION
 
     info "Activision type=0x%02x" packet_type
 
-rule udp.content "\x0c\x02" => ACTIVISION
-rule udp.content "\x0d\x02" => ACTIVISION
-rule udp.content "\x46\x00" => ACTIVISION
-rule udp.content "\x47\x00" => ACTIVISION
+weak rule udp.content "\x0c\x02" => ACTIVISION
+weak rule udp.content "\x0d\x02" => ACTIVISION
+weak rule udp.content "\x46\x00" => ACTIVISION
+weak rule udp.content "\x47\x00" => ACTIVISION
 
 color activision.packet_type == 0x0C => black lightyellow
 color activision.packet_type == 0x0D => black lightblue

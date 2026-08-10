@@ -30,14 +30,14 @@ Object<main> RTP
     col "RTP"
 
     # ── Byte 0: version, padding, extension, CSRC count ─────────────────────────
-    required uint8 first_byte "Flags"
+    uint8 first_byte "Flags"
         bits first_byte version    6 2 "Version"
         bits first_byte padding    5 1 "Padding"
         bits first_byte extension  4 1 "Extension"
         bits first_byte csrc_count 0 4 "CC (CSRC Count)"
 
     # ── Byte 1: marker bit and payload type ──────────────────────────────────────
-    required uint8 second_byte "Marker / Payload Type"
+    uint8 second_byte "Marker / Payload Type"
         bits second_byte marker       7 1 "Marker"
         bits second_byte payload_type 0 7 "Payload Type"
             PCMU (G.711 µ-law)          =  0
@@ -98,14 +98,14 @@ Object<main> RTP
             Dynamic (127)               = 127
 
     # ── Bytes 2–11: sequence, timestamp, SSRC ────────────────────────────────────
-    required uint16 sequence_number "Sequence Number"
-    required uint32 timestamp "Timestamp"
-    required uint32 ssrc hex "SSRC"
+    uint16 sequence_number "Sequence Number"
+    uint32 timestamp "Timestamp"
+    uint32 ssrc hex "SSRC"
 
     # ── Bytes 12+: CSRC list (CC entries, 4 bytes each) ──────────────────────────
     repeat csrc_count as csrc "CSRC List"
         label "CSRC 0x%x" csrc_id
-        required uint32 csrc_id hex "CSRC"
+        uint32 csrc_id hex "CSRC"
 
     # ── Optional header extension (present when X bit = 1) ───────────────────────
     # ext_length counts 32-bit words; actual extension data is ext_length × 4 bytes.
@@ -113,9 +113,9 @@ Object<main> RTP
     # expression is available in the length specifier; add a manual extension decoder
     # for profiles that pad to exact word boundaries (RFC 5285 one-byte/two-byte headers).
     when extension == 1:
-        required uint16 ext_profile hex "Extension Profile"
-        required uint16 ext_length "Extension Length (words)"
-        required bytes[ext_length] ext_data "Extension Data"
+        uint16 ext_profile hex "Extension Profile"
+        uint16 ext_length "Extension Length (words)"
+        bytes[ext_length] ext_data "Extension Data"
 
     # ── Media payload ─────────────────────────────────────────────────────────────
     # Payload type 31 is the one video format RFC 3551 assigns a static number
@@ -126,7 +126,7 @@ Object<main> RTP
     when payload_type == 31:
         layer h261 H261
     else:
-        required payload media_payload "Media Payload"
+        payload media_payload "Media Payload"
 
     info "PT=%s Seq=%u SSRC=0x%x" payload_type, sequence_number, ssrc
 
@@ -134,33 +134,33 @@ Object<main> RTP
 # V=2 requires first_byte & 0xC0 == 0x80, giving 0x80–0xBF.  The most common
 # values are enumerated; CC=0 (0x80/0x90/0xa0) and CC=1 (0x81/0x91) cover the
 # overwhelming majority of real captures.  Port rules below catch the rest.
-rule udp.content "\x80" => RTP
-rule udp.content "\x81" => RTP
-rule udp.content "\x82" => RTP
-rule udp.content "\x83" => RTP
-rule udp.content "\x84" => RTP
-rule udp.content "\x85" => RTP
-rule udp.content "\x86" => RTP
-rule udp.content "\x87" => RTP
-rule udp.content "\x88" => RTP
-rule udp.content "\x89" => RTP
-rule udp.content "\x8a" => RTP
-rule udp.content "\x8b" => RTP
-rule udp.content "\x8c" => RTP
-rule udp.content "\x8d" => RTP
-rule udp.content "\x8e" => RTP
-rule udp.content "\x8f" => RTP
+weak rule udp.content "\x80" => RTP
+weak rule udp.content "\x81" => RTP
+weak rule udp.content "\x82" => RTP
+weak rule udp.content "\x83" => RTP
+weak rule udp.content "\x84" => RTP
+weak rule udp.content "\x85" => RTP
+weak rule udp.content "\x86" => RTP
+weak rule udp.content "\x87" => RTP
+weak rule udp.content "\x88" => RTP
+weak rule udp.content "\x89" => RTP
+weak rule udp.content "\x8a" => RTP
+weak rule udp.content "\x8b" => RTP
+weak rule udp.content "\x8c" => RTP
+weak rule udp.content "\x8d" => RTP
+weak rule udp.content "\x8e" => RTP
+weak rule udp.content "\x8f" => RTP
 # X=1 (with header extension), CC=0–3
-rule udp.content "\x90" => RTP
-rule udp.content "\x91" => RTP
-rule udp.content "\x92" => RTP
-rule udp.content "\x93" => RTP
+weak rule udp.content "\x90" => RTP
+weak rule udp.content "\x91" => RTP
+weak rule udp.content "\x92" => RTP
+weak rule udp.content "\x93" => RTP
 # P=1 (with padding), CC=0–1
-rule udp.content "\xa0" => RTP
-rule udp.content "\xa1" => RTP
+weak rule udp.content "\xa0" => RTP
+weak rule udp.content "\xa1" => RTP
 # P=1, X=1
-rule udp.content "\xb0" => RTP
-rule udp.content "\xb1" => RTP
+weak rule udp.content "\xb0" => RTP
+weak rule udp.content "\xb1" => RTP
 
 # ── Port bindings (secondary hint) ────────────────────────────────────────────
 rule udp.port == 5004 => RTP

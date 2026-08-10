@@ -27,10 +27,10 @@ Object<main> DNP3
     col "DNP3"
 
     # ── Data Link Layer Header (10 bytes) ─────────────────────────────────────────
-    required uint8     start_lo = 0x05    "Start Byte 0 (0x05)"
-    required uint8     start_hi = 0x64    "Start Byte 1 (0x64)"
-    required uint8     length             "DLL Length"
-    required uint8     control            "DLL Control"
+    uint8     start_lo = 0x05    "Start Byte 0 (0x05)"
+    uint8     start_hi = 0x64    "Start Byte 1 (0x64)"
+    uint8     length             "DLL Length"
+    uint8     control            "DLL Control"
         bits control dir     7 1  "DIR"
             0 = Outstation
             1 = Master
@@ -50,24 +50,24 @@ Object<main> DNP3
             # Secondary station (PRM=0): value 0=ACK, 1=NACK share codes 0 and 1
             11 = LinkStatus
             15 = NotSupported
-    required le_uint16 destination        "Destination Address"
-    required le_uint16 source             "Source Address"
-    required uint16    header_crc         "Header CRC"
+    le_uint16 destination        "Destination Address"
+    le_uint16 source             "Source Address"
+    uint16    header_crc         "Header CRC"
 
     # ── Transport Layer (1 byte, present when DLL carries user data) ──────────────
-    required uint8 transport              "Transport Header"
+    uint8 transport              "Transport Header"
         bits transport tfir 7 1  "FIR (First Fragment)"
         bits transport tfin 6 1  "FIN (Final Fragment)"
         bits transport tseq 0 6  "Transport Sequence"
 
     # ── Application Layer (present when DLL carries user data) ───────────────────
-    required uint8 app_control            "AL Control"
+    uint8 app_control            "AL Control"
         bits app_control afir 7 1  "FIR (First Fragment)"
         bits app_control afin 6 1  "FIN (Final Fragment)"
         bits app_control acon 5 1  "CON (Confirmation Required)"
         bits app_control auns 4 1  "UNS (Unsolicited)"
         bits app_control aseq 0 4  "AL Sequence"
-    required uint8 function_code          "AL Function Code"
+    uint8 function_code          "AL Function Code"
         0x00 = Confirm
         0x01 = Read
         0x02 = Write
@@ -93,8 +93,8 @@ Object<main> DNP3
 # ── Content detection (primary, port-independent) ─────────────────────────────
 # Magic bytes 0x05 0x64 are the fixed DLL start sequence; reliable for detection
 # even on non-standard ports (e.g. tunnelled SCADA or alternate TCP ports).
-rule tcp.content "\x05\x64" => DNP3
-rule udp.content "\x05\x64" => DNP3
+weak rule tcp.content "\x05\x64" => DNP3
+weak rule udp.content "\x05\x64" => DNP3
 
 # ── Port bindings (secondary hints) ──────────────────────────────────────────
 rule tcp.port == 20000 => DNP3

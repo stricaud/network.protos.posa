@@ -2,5 +2,5 @@
 # IP protocol 50. Encrypted payload, padding, pad_len, next_header, and ICV follow.
 # SPI=0 is reserved; seq starts at 1 and must not wrap without rekeying.
 Object<main> ESP
-    required uint32 spi = 0
-    required uint32 seq = 1
+    uint32 spi = 0
+    uint32 seq = 1

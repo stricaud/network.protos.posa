@@ -38,7 +38,7 @@ Object<SMTP> RESPONSE
            "500 " "501 " "502 " "503 " "504 "
            "535 "
            "550 " "551 " "552 " "553 " "554 "
-    required bytes<3> code "Code"
+    bytes<3> code "Code"
         220 = "Service Ready"
         221 = "Service Closing Transmission Channel"
         235 = "Authentication Successful"
@@ -61,8 +61,8 @@ Object<SMTP> RESPONSE
         552 = "Requested Mail Action Aborted: Exceeded Storage Allocation"
         553 = "Requested Action Not Taken: Mailbox Name Not Allowed"
         554 = "Transaction Failed; No SMTP Service Here"
-    required bytes<1> separator "Sep"
-    required string message until "\r\n" "Message"
+    bytes<1> separator "Sep"
+    string message until "\r\n" "Message"
     info "%s %s" code, message
 
 # ── Client Commands ────────────────────────────────────────────────────────────
@@ -79,7 +79,7 @@ Object<SMTP> COMMAND
            "NOOP\r" "NOOP "
            "AUTH "
            "STARTTLS\r"
-    required string verb until " " "Command"
+    string verb until " " "Command"
         EHLO     = "Extended Hello (ESMTP Negotiation)"
         HELO     = "Hello (Basic SMTP)"
         MAIL     = "Mail (Begin Transfer)"

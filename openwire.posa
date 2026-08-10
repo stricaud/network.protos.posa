@@ -72,13 +72,13 @@ Object<main> OpenWire
     abbrev "openwire"
     col "OpenWire"
 
-    required uint32 data_length         "Data Length"
-    required uint8  data_type lookup OpenWireCommandTypes "Command Type"
-    required uint32 command_id          "Command ID"
-    required uint8  response_required   "Response Required"
+    uint32 data_length         "Data Length"
+    uint8  data_type lookup OpenWireCommandTypes "Command Type"
+    uint32 command_id          "Command ID"
+    uint8  response_required   "Response Required"
         False = 0
         True  = 1
-    required uint32 correlation_id      "Correlation ID"
+    uint32 correlation_id      "Correlation ID"
 
     payload body "Command Body"
 

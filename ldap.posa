@@ -23,23 +23,23 @@ Object<main> LDAP
 
     # ── Outer SEQUENCE wrapper ────────────────────────────────────────────────
     # 0x30 = universal constructed tag 16 (SEQUENCE)
-    required uint8 sequence_tag = 0x30 hex "Sequence Tag"
+    uint8 sequence_tag = 0x30 hex "Sequence Tag"
 
     # Short-form BER length (1 byte). Covers messages up to 127 bytes.
     # Long-form lengths (first byte 0x81 or 0x82) will misparse here but the
     # operation tag is still visible after the messageID TLV at a fixed offset.
-    required uint8 sequence_len "Sequence Length"
+    uint8 sequence_len "Sequence Length"
 
     # ── MessageID — ASN.1 INTEGER ─────────────────────────────────────────────
     # 0x02 = universal primitive tag 2 (INTEGER)
-    required uint8 msg_id_tag = 0x02 hex "Message ID Tag"
-    required uint8 msg_id_len "Message ID Length"
-    required bytes[msg_id_len] message_id hex "Message ID"
+    uint8 msg_id_tag = 0x02 hex "Message ID Tag"
+    uint8 msg_id_len "Message ID Length"
+    bytes[msg_id_len] message_id hex "Message ID"
 
     # ── ProtocolOp — Application-class CHOICE ─────────────────────────────────
     # Each operation is encoded as a constructed Application tag (0x60–0x79).
     # The tag value alone identifies the operation type; the body varies per op.
-    required uint8 op_tag hex "Operation"
+    uint8 op_tag hex "Operation"
         BindRequest           = 0x60
         BindResponse          = 0x61
         UnbindRequest         = 0x62
@@ -71,7 +71,7 @@ Object<main> LDAP
 # Every LDAP message begins with the ASN.1 SEQUENCE tag 0x30. This is a
 # common byte (e.g. TLS also uses it in some contexts), so combine with the
 # port rules below rather than relying on this alone.
-rule tcp.content "\x30" => LDAP
+weak rule tcp.content "\x30" => LDAP
 
 # ── Port bindings ─────────────────────────────────────────────────────────────
 # Port rules are secondary: the content rule fires first on non-standard ports.

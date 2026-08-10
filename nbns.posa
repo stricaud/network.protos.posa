@@ -31,26 +31,26 @@
 Object<main> NB_RR
     abbrev "nbns"
 
-    required dnsname name   "Name"
-    required uint16  type   "Type"
+    dnsname name   "Name"
+    uint16  type   "Type"
         NB     = 0x0020
         NBSTAT = 0x0021
         A      = 0x0001
         NS     = 0x0002
         NULL   = 0x000a
         ANY    = 0x00ff
-    required uint16  class  "Class"
+    uint16  class  "Class"
         IN  = 1
         ANY = 255
-    required uint32  ttl    "Time to live"
-    required uint16  rdlength "Data length"
+    uint32  ttl    "Time to live"
+    uint16  rdlength "Data length"
 
     scope rdlength
         # NB record: one or more address entries, each 6 bytes
         when type == 0x0020:
             repeat until end as addr_entry "NB Addresses"
                 label "%s (%s, %s)" ip, group, ont
-                required uint16 nb_flags "NB Flags"
+                uint16 nb_flags "NB Flags"
                     bits nb_flags group 15 1 "Name type"
                         Unique = 0
                         Group  = 1
@@ -59,20 +59,20 @@ Object<main> NB_RR
                         P-node = 1
                         M-node = 2
                         H-node = 3
-                required ip4 ip "IP Address"
+                ip4 ip "IP Address"
         # NBSTAT: adapter status — complex binary structure, surface as raw
         when type == 0x0021:
-            required payload rdata "Adapter Status"
+            payload rdata "Adapter Status"
         when type != 0x0020:
-            required payload rdata "Rdata"
+            payload rdata "Rdata"
 
 # ── Main NBNS frame ──────────────────────────────────────────────────────────
 Object<main> NBNS
     abbrev "nbns"
     col "NBNS"
 
-    required uint16 transaction_id "Transaction ID"
-    required uint16 flags "Flags"
+    uint16 transaction_id "Transaction ID"
+    uint16 flags "Flags"
         bits flags qr      15 1 "Message type"
             Query    = 0
             Response = 1
@@ -97,20 +97,20 @@ Object<main> NBNS
             Active-err = 6
             Conflict   = 7
 
-    required uint16 questions  "Questions"
-    required uint16 answers    "Answer RRs"
-    required uint16 authority  "Authority RRs"
-    required uint16 additional "Additional RRs"
+    uint16 questions  "Questions"
+    uint16 answers    "Answer RRs"
+    uint16 authority  "Authority RRs"
+    uint16 additional "Additional RRs"
 
     # ── Questions ─────────────────────────────────────────────────────────────
     repeat questions as query "Queries"
         label "%s  type %s" qname, qtype
-        required dnsname qname  "Name"
-        required uint16  qtype  "Type"
+        dnsname qname  "Name"
+        uint16  qtype  "Type"
             NB     = 0x0020
             NBSTAT = 0x0021
             ANY    = 0x00ff
-        required uint16  qclass "Class"
+        uint16  qclass "Class"
             IN  = 1
             ANY = 255
 

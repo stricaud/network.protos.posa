@@ -4,8 +4,8 @@
 protocol MySQL
     col "MySQL"
     bytes<3> length
-    uint8    seq
-    uint8    command "Command"
+    uint8    seq defaults(0)
+    uint8    command "Command" defaults(3)
         COM_QUIT     = 1
         COM_INIT_DB  = 2
         COM_QUERY    = 3

@@ -42,12 +42,12 @@ Object<main> RTPS
     col "RTPS"
     starts "RTPS"
 
-    str<4>  magic           "Magic"
-    uint8   version_major   "Protocol Version (major)"
-    uint8   version_minor   "Protocol Version (minor)"
-    uint8   vendor_id_major hex "Vendor ID (major)"
+    str<4>  magic "Magic" defaults("RTPS")
+    uint8   version_major "Protocol Version (major)" defaults(2)
+    uint8   version_minor "Protocol Version (minor)" defaults(1)
+    uint8   vendor_id_major hex "Vendor ID (major)" defaults(0x01)
         0x01 = "OMG"
-    uint8   vendor_id_minor hex "Vendor ID (minor)"
+    uint8   vendor_id_minor hex "Vendor ID (minor)" defaults(0x01)
         0x01 = "eProsima FastRTPS"
         0x02 = "RTI Connext DDS"
         0x03 = "OpenSplice DDS"
@@ -63,13 +63,13 @@ Object<main> RTPS
         0x0D = "ETRI Electronics"
         0x0E = "Real-Time Innovations"
         0x10 = "PrismTech"
-    bytes<12> guid_prefix   "GUID Prefix"
+    bytes<12> guid_prefix "GUID Prefix"
 
     # First submessage header (more may follow but are in the payload)
-    uint8   submsg_id       lookup RtpsSubmessageTypes "Submessage ID"
-    uint8   submsg_flags    hex "Flags"
-    uint16  submsg_length   "Submessage Length"
-    payload submsg_body     "Submessage Body + Remaining"
+    uint8   submsg_id       lookup RtpsSubmessageTypes "Submessage ID"     defaults(0x15)
+    uint8   submsg_flags    hex                        "Flags"             defaults(0x01)
+    uint16  submsg_length                              "Submessage Length" defaults(0)
+    payload submsg_body                                "Submessage Body + Remaining"
 
     info "RTPS v%u.%u %s len=%u" version_major, version_minor, submsg_id, submsg_length
 

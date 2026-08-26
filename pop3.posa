@@ -28,45 +28,45 @@ Object<main> POP3
     # "string until" stops at the first space; for argument-free commands (STAT,
     # NOOP, RSET, QUIT, CAPA, STLS) it stops at \r and the CRLF is left in the
     # buffer to be consumed by whichever "until \r\n" field follows.
-    string keyword until " "            ["Command/Status"]
+    string keyword until " " ["Command/Status"] defaults("+OK")
 
     # ── Server responses ──────────────────────────────────────────────────────
     when keyword == "+OK":
-        string response until "\r\n"             ["Server Response"]
-        payload response_body                    ["Response Body"]
+        string response until "\r\n" ["Server Response"] defaults("POP3 server ready")
+        payload response_body        ["Response Body"]
 
     when keyword == "-ERR":
-        string error_detail until "\r\n"         ["Error Detail"]
+        string error_detail until "\r\n" ["Error Detail"]
 
     # ── Authentication commands ───────────────────────────────────────────────
     when keyword == "USER":
-        string username until "\r\n"             ["Username"]
+        string username until "\r\n" ["Username"]
 
     when keyword == "PASS":
-        string password until "\r\n"             ["Password"]
+        string password until "\r\n" ["Password"]
 
     when keyword == "AUTH":
-        string auth_mech until "\r\n"            ["Auth Mechanism"]
+        string auth_mech until "\r\n" ["Auth Mechanism"]
 
     # ── Retrieval and listing commands ────────────────────────────────────────
     when keyword == "RETR":
-        string retr_num until "\r\n"             ["Message Number"]
+        string retr_num until "\r\n" ["Message Number"]
 
     when keyword == "TOP":
-        string top_args until "\r\n"             ["Msg Num / Lines"]
+        string top_args until "\r\n" ["Msg Num / Lines"]
 
     when keyword == "DELE":
-        string dele_num until "\r\n"             ["Message Number"]
+        string dele_num until "\r\n" ["Message Number"]
 
     when keyword == "LIST":
-        string list_arg until "\r\n"             ["Message Number"]
+        string list_arg until "\r\n" ["Message Number"]
 
     when keyword == "UIDL":
-        string uidl_arg until "\r\n"             ["Message Number"]
+        string uidl_arg until "\r\n" ["Message Number"]
 
     # ── Catch-all: STAT NOOP RSET QUIT CAPA STLS and any unrecognised line ───
     else:
-        string argument until "\r\n"             ["Argument"]
+        string argument until "\r\n" ["Argument"]
 
     # Info column: keyword then whichever detail field is populated.
     # Only one conditional field is set per line; missing fields shrink to

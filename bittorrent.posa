@@ -27,11 +27,11 @@ Object<BITTORRENT> BT_HANDSHAKE
     col "BitTorrent"
     starts "\x13BitTorrent protocol"
 
-    uint8    pstrlen  "Protocol Name Length"
-    str<19>  pstr     "Protocol"
+    uint8    pstrlen      "Protocol Name Length" defaults(19)
+    str<19>  pstr         "Protocol"             defaults("BitTorrent protocol")
     bytes<8> reserved hex "Reserved / Extension Bits"
-    bytes<20> info_hash "Info Hash"
-    bytes<20> peer_id   "Peer ID"
+    bytes<20> info_hash   "Info Hash"
+    bytes<20> peer_id     "Peer ID"
 
     payload rest "Post-Handshake"
 
@@ -41,12 +41,12 @@ Object<BITTORRENT> BT_MESSAGE
     abbrev "bittorrent"
     col "BitTorrent"
 
-    uint32 msg_length "Message Length"
+    uint32 msg_length "Message Length" defaults(0)
     when msg_length == 0:
         # keep-alive: no type byte
         payload rest "Keep-Alive"
     else:
-        uint8 msg_type "Message Type"
+        uint8 msg_type "Message Type" defaults(0)
             0  = "Choke"
             1  = "Unchoke"
             2  = "Interested"

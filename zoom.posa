@@ -30,20 +30,20 @@ Object<ZOOM> ZOOM_SFU
     starts "\x01\x00\x02" "\x01\x00\x03" "\x02\x00\x02" "\x02\x00\x03"
            "\x03" "\x04" "\x05"
 
-    uint8 sfu_type "SFU Type"
+    uint8 sfu_type "SFU Type" defaults(1)
         1 = "Client→SFU"
         2 = "SFU→Client"
         3 = "Zoom Type 3"
         4 = "Zoom Type 4"
         5 = "SFU with ZME"
-    uint16 sequence_num "Sequence Number"
-    uint32 unknown hex "Unknown"
-    uint8 direction "Direction"
+    uint16 sequence_num "Sequence Number" defaults(0)
+    uint32 unknown hex "Unknown" defaults(0)
+    uint8 direction "Direction" defaults(0)
         0 = "To Zoom"
         4 = "From Zoom"
 
     when sfu_type == 5:
-        uint8 enc_type "Media Type"
+        uint8 enc_type "Media Type" defaults(15)
             13 = "Screen Share"
             15 = "Audio (RTP)"
             16 = "Video (RTP)"
@@ -51,10 +51,10 @@ Object<ZOOM> ZOOM_SFU
             33 = "RTCP"
             34 = "RTCP"
             35 = "RTCP"
-        uint32 unknown_1 hex "Unknown 1"
-        uint32 unknown_2 hex "Unknown 2"
-        uint16 media_seq "Media Sequence"
-        uint32 timestamp "Timestamp"
+        uint32 unknown_1 hex "Unknown 1" defaults(0)
+        uint32 unknown_2 hex "Unknown 2" defaults(0)
+        uint16 media_seq "Media Sequence" defaults(0)
+        uint32 timestamp "Timestamp" defaults(0)
         payload media_payload "Media Payload"
     else:
         payload payload "Payload"
@@ -67,7 +67,7 @@ Object<ZOOM> ZOOM_P2P
     col "Zoom"
     starts "\x1f\x02\x01"
 
-    uint8 enc_type "ZME Type"
+    uint8 enc_type "ZME Type" defaults(0x1F)
         0x1F = "P2P Connection Setup"
     payload body "Body"
 

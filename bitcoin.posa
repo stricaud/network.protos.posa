@@ -41,17 +41,17 @@ Object<main> BITCOIN
     abbrev "bitcoin"
     col "Bitcoin"
 
-    uint32 magic hex "Network Magic"
+    uint32 magic hex "Network Magic" defaults(0xF9BEB4D9)
         0xF9BEB4D9 = "Mainnet"
         0xFABFB5DA = "Testnet"
         0x0B110907 = "Testnet3"
         0x0A03CF40 = "Signet"
         0xF9BEB4FE = "Namecoin"
 
-    str<12> command lookup BitcoinCommands "Command"
+    str<12> command lookup BitcoinCommands "Command" defaults("version")
 
-    le_uint32 payload_length "Payload Length"
-    uint32 checksum hex "Checksum"
+    le_uint32 payload_length "Payload Length" defaults(0)
+    uint32 checksum hex "Checksum" defaults(0x5DF6E0E2)
 
     bytes[payload_length] payload "Payload"
 

@@ -26,14 +26,14 @@ Object<main> ZABBIX
     col "Zabbix"
     starts "ZBXD"
 
-    str<4>  magic           "Magic"
-    uint8   flags           hex "Flags"
+    str<4>  magic "Magic" defaults("ZBXD")
+    uint8   flags           hex "Flags" defaults(0x01)
         0x01 = "Standard Protocol"
         0x04 = "Compressed"
         0x05 = "Compressed Protocol"
-    le_uint32 data_length   "Data Length"
-    le_uint32 reserved      "Reserved / Compressed Size"
-    payload payload         "JSON Payload"
+    le_uint32 data_length "Data Length"                defaults(0)
+    le_uint32 reserved    "Reserved / Compressed Size" defaults(0)
+    payload payload       "JSON Payload"
 
     info "Zabbix flags=0x%02x len=%u" flags, data_length
 

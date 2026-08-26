@@ -80,8 +80,8 @@ Object<NNTP> NNTP_RESPONSE
     col "NNTP"
     starts "1" "2" "3" "4" "5"
 
-    string status_code until " \r" lookup NntpStatusCodes "Status Code"
-    string message until "\r" "Message"
+    string status_code until " \r" lookup NntpStatusCodes "Status Code" defaults("200")
+    string message until "\r" "Message" defaults("Service available")
     payload rest "Data"
 
     info "%s %s" status_code, message
@@ -94,7 +94,7 @@ Object<NNTP> NNTP_COMMAND
            "OVER" "HDR" "IHAVE" "POST" "QUIT" "SLAVE" "CHECK" "TAKETHIS"
            "DATE" "HELP"
 
-    string command until " \r" "Command"
+    string command until " \r" "Command" defaults("LIST")
     payload args "Arguments"
 
     info "%s" command

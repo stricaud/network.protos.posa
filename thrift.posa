@@ -28,17 +28,17 @@ Object<THRIFT> THRIFT_BINARY
     col "Thrift"
     starts "\x80\x01"
 
-    uint16 version      hex "Version"
+    uint16 version      hex "Version" defaults(0x8001)
         0x8001 = "Binary Protocol v1"
-    uint16 message_type "Message Type"
+    uint16 message_type "Message Type" defaults(1)
         1 = "Call"
         2 = "Reply"
         3 = "Exception"
         4 = "Oneway"
-    uint32 method_len   "Method Name Length"
+    uint32 method_len      "Method Name Length" defaults(0)
     str[method_len] method "Method Name"
-    uint32 seq_id       "Sequence ID"
-    payload body        "Message Body"
+    uint32 seq_id          "Sequence ID"        defaults(1)
+    payload body           "Message Body"
 
     info "Thrift %s %s seq=%u" message_type, method, seq_id
 
@@ -47,10 +47,10 @@ Object<THRIFT> THRIFT_COMPACT
     col "Thrift"
     starts "\x82"
 
-    uint8  protocol_id  hex "Protocol ID"
+    uint8  protocol_id  hex "Protocol ID" defaults(0x82)
         0x82 = "Compact Protocol"
-    uint8  version_type hex "Version/Type"
-    payload rest        "Method + Body"
+    uint8  version_type hex "Version/Type" defaults(0x21)
+    payload rest            "Method + Body"
 
     info "Thrift compact"
 
@@ -58,9 +58,9 @@ Object<THRIFT> THRIFT_FRAMED
     abbrev "thrift"
     col "Thrift"
 
-    uint32 frame_length "Frame Length"
+    uint32 frame_length "Frame Length" defaults(0)
     starts "\x80\x01" "\x82"
-    payload frame       "Framed Message"
+    payload frame "Framed Message"
 
     info "Thrift framed len=%u" frame_length
 

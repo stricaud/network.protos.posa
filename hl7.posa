@@ -22,10 +22,10 @@ Object<main> HL7_MLLP
     abbrev "hl7"
     col "HL7"
 
-    uint8  start_block = 0x0B  hex "Start Block (VT)"
-    string  message until "\x1c"            "HL7 Message"
-    uint8  end_block   = 0x1C  hex "End Block (FS)"
-    uint8  cr          = 0x0D  hex "Carriage Return"
+    uint8  start_block  hex      "Start Block (VT)" defaults(0x0B)
+    string  message until "\x1c" "HL7 Message"
+    uint8  end_block  hex        "End Block (FS)"   defaults(0x1C)
+    uint8  cr  hex               "Carriage Return"  defaults(0x0D)
 
     info "HL7 %s" message
 

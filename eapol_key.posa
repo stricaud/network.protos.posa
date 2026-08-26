@@ -15,13 +15,13 @@
 #   M3 (AP→STA,  GTK+MIC+Enc):  0x13CA  Pairwise|Install|Ack|MIC|Secure|Enc|Ver2
 #   M4 (STA→AP,  MIC+Secure):   0x030A  Pairwise|MIC|Secure|Ver2
 Object<main> EAPOL_KEY
-    uint8     descriptor_type  = 2
-    uint16    key_info         = 0x008A
-    uint16    key_length       = 16
+    uint8     descriptor_type defaults(2)
+    uint16    key_info defaults(0x008A)
+    uint16    key_length defaults(16)
     bytes<8>  replay_counter
     bytes<32> key_nonce
     bytes<16> key_iv
     bytes<8>  key_rsc
     bytes<8>  key_id
     bytes<16> key_mic
-    uint16    key_data_length  = 0
+    uint16    key_data_length defaults(0)

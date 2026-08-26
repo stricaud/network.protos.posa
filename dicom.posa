@@ -9,7 +9,7 @@ Object<main> DICOM
     abbrev "dicom"
     col "DICOM"
 
-    uint8  pdu_type        "PDU Type"
+    uint8  pdu_type "PDU Type" defaults(0x01)
         A_ASSOCIATE_RQ  = 0x01
         A_ASSOCIATE_AC  = 0x02
         A_ASSOCIATE_RJ  = 0x03
@@ -17,50 +17,50 @@ Object<main> DICOM
         A_RELEASE_RQ    = 0x05
         A_RELEASE_RP    = 0x06
         A_ABORT         = 0x07
-    uint8  reserved        "Reserved"
-    uint32 pdu_length      "PDU Length"
+    uint8  reserved "Reserved" defaults(0)
+    uint32 pdu_length "PDU Length" defaults(0)
 
     # A-ASSOCIATE-RQ / A-ASSOCIATE-AC
     when pdu_type == 0x01:
-        uint16 protocol_version hex "Protocol Version"
-        uint16 reserved2
-        bytes<16> called_ae    "Called AE Title"
-        bytes<16> calling_ae   "Calling AE Title"
+        uint16 protocol_version hex "Protocol Version" defaults(0x0001)
+        uint16 reserved2                               defaults(0)
+        bytes<16> called_ae         "Called AE Title"  defaults("ANY-SCP")
+        bytes<16> calling_ae        "Calling AE Title" defaults("ECHOSCU")
         bytes<32> reserved3
-        payload  variable_items        "Variable Items"
+        payload  variable_items     "Variable Items"
 
     when pdu_type == 0x02:
-        uint16 protocol_version hex "Protocol Version"
-        uint16 reserved2
-        bytes<16> called_ae    "Called AE Title"
-        bytes<16> calling_ae   "Calling AE Title"
+        uint16 protocol_version hex "Protocol Version" defaults(0x0001)
+        uint16 reserved2                               defaults(0)
+        bytes<16> called_ae         "Called AE Title"  defaults("ANY-SCP")
+        bytes<16> calling_ae        "Calling AE Title" defaults("ECHOSCU")
         bytes<32> reserved3
-        payload  variable_items        "Variable Items"
+        payload  variable_items     "Variable Items"
 
     # A-ASSOCIATE-RJ
     when pdu_type == 0x03:
-        uint8  reserved2
-        uint8  result          "Result"
+        uint8  reserved2 defaults(0)
+        uint8  result "Result" defaults(1)
             Rejected_Permanent = 1
             Rejected_Transient = 2
-        uint8  source          "Source"
+        uint8  source "Source" defaults(1)
             DICOM_UL_Service_User     = 1
             DICOM_UL_Service_Provider = 2
             DICOM_UL_Service_Provider_Acse = 3
-        uint8  reason          "Reason/Diag"
+        uint8  reason "Reason/Diag" defaults(1)
 
     # P-DATA-TF
     when pdu_type == 0x04:
-        payload pdv_list                "Presentation Data Value List"
+        payload pdv_list "Presentation Data Value List"
 
     # A-ABORT
     when pdu_type == 0x07:
-        uint8  reserved2
-        uint8  reserved3
-        uint8  source          "Source"
+        uint8  reserved2 defaults(0)
+        uint8  reserved3 defaults(0)
+        uint8  source "Source" defaults(1)
             Service_User     = 0
             Service_Provider = 2
-        uint8  reason          "Reason/Diag"
+        uint8  reason "Reason/Diag" defaults(1)
 
     else:
         payload body "Body"

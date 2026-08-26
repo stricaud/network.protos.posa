@@ -10,36 +10,36 @@
 
 Object<TFTP> TFTP_RRQ
     abbrev "tftp"
-    uint16  opcode = 1
+    uint16  opcode defaults(1)
         RRQ = 1
-    cstring filename
-    cstring mode
+    cstring filename defaults("file.txt")
+    cstring mode defaults("octet")
 
 Object<TFTP> TFTP_WRQ
     abbrev "tftp"
-    uint16  opcode = 2
+    uint16  opcode defaults(2)
         WRQ = 2
-    cstring filename
-    cstring mode
+    cstring filename defaults("file.txt")
+    cstring mode defaults("octet")
 
 Object<TFTP> TFTP_DATA
     abbrev "tftp"
-    uint16  opcode = 3
+    uint16  opcode defaults(3)
         DATA = 3
-    uint16  block = 1
+    uint16  block defaults(1)
     payload data
 
 Object<TFTP> TFTP_ACK
     abbrev "tftp"
-    uint16 opcode = 4
+    uint16 opcode defaults(4)
         ACK = 4
-    uint16 block = 0
+    uint16 block defaults(0)
 
 Object<TFTP> TFTP_ERROR
     abbrev "tftp"
-    uint16  opcode = 5
+    uint16  opcode defaults(5)
         ERROR = 5
-    uint16  code = 0
+    uint16  code defaults(0)
     cstring msg
 
 rule udp.port == 69 => TFTP

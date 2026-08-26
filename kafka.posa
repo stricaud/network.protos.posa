@@ -82,11 +82,11 @@ Object<KAFKA> KAFKA_REQUEST
     abbrev "kafka"
     col "Kafka"
 
-    uint32 message_length "Frame Length"
-    uint16 api_key lookup KafkaApiKeys "API Key"
-    uint16 api_version "API Version"
-    uint32 correlation_id "Correlation ID"
-    uint16 client_id_length "Client ID Length"
+    uint32 message_length "Frame Length" defaults(0)
+    uint16 api_key lookup KafkaApiKeys "API Key" defaults(18)
+    uint16 api_version "API Version" defaults(0)
+    uint32 correlation_id "Correlation ID" defaults(1)
+    uint16 client_id_length "Client ID Length" defaults(0)
     str[client_id_length] client_id "Client ID"
 
     payload body "Request Body"
@@ -97,8 +97,8 @@ Object<KAFKA> KAFKA_RESPONSE
     abbrev "kafka"
     col "Kafka"
 
-    uint32 message_length "Frame Length"
-    uint32 correlation_id "Correlation ID"
+    uint32 message_length "Frame Length" defaults(0)
+    uint32 correlation_id "Correlation ID" defaults(1)
 
     payload body "Response Body"
 

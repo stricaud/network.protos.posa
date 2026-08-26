@@ -20,15 +20,15 @@ Object<TS> TEAMSPEAK_UDP
     col "TeamSpeak"
     starts "TS3INIT1"
 
-    str<8>   magic       "Magic"
-    uint8    reserved    "Reserved"
-    uint16   ts_version  "TS Version"
-    uint8    command     "Command"
+    str<8>   magic "Magic" defaults("TS3INIT1")
+    uint8    reserved "Reserved" defaults(0)
+    uint16   ts_version "TS Version" defaults(0)
+    uint8    command "Command" defaults(0)
         0    = "Initiation"
         1    = "Reply"
-    uint32   random      hex "Random"
-    uint32   cookie      hex "Cookie"
-    payload  rest        "Payload"
+    uint32   random      hex "Random" defaults(0)
+    uint32   cookie      hex "Cookie" defaults(0)
+    payload  rest            "Payload"
 
     info "TS3INIT1 cmd=%u" command
 
@@ -36,12 +36,12 @@ Object<TS> TEAMSPEAK_TCP
     abbrev "ts"
     col "TeamSpeak"
 
-    uint32 magic hex "Magic"
+    uint32 magic hex "Magic" defaults(0xF4BE0100)
         0xF4BE0100 = "Client Greeting"
         0xF4BE0200 = "Server Greeting"
         0xF4BE0300 = "Data Frame"
 
-    uint32 length "Length"
+    uint32 length "Length" defaults(0)
     payload body  "Body"
 
     info "TeamSpeak TCP magic=0x%08x" magic

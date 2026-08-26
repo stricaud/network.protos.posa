@@ -31,11 +31,11 @@ Object<RTMP> RTMP_HANDSHAKE
     col "RTMP"
     starts "\x03"
 
-    uint8    version   "Version"
+    uint8    version "Version" defaults(3)
         3 = "RTMP"
         6 = "RTMPE (encrypted)"
-    uint32   timestamp "C1 Timestamp"
-    uint32   zeros     "C1 Zeros"
+    uint32   timestamp "C1 Timestamp" defaults(0)
+    uint32   zeros     "C1 Zeros"     defaults(0)
     payload  random    "C1 Random Data"
 
     info "RTMP handshake version=%u" version
@@ -44,7 +44,7 @@ Object<RTMP> RTMP_CHUNK
     abbrev "rtmp"
     col "RTMP"
 
-    uint8 basic_header hex "Basic Header"
+    uint8 basic_header hex "Basic Header" defaults(0)
     bits basic_header fmt 6 2 "Format"
         0 = "Type 0 — New stream"
         1 = "Type 1 — Same stream, new type"
@@ -58,9 +58,9 @@ Object<RTMP> RTMP_CHUNK
         6 = "Audio"
 
     when fmt == 0:
-        uint24 timestamp   "Timestamp"
-        uint24 msg_length  "Message Length"
-        uint8  msg_type_id "Message Type"
+        uint24 timestamp "Timestamp" defaults(0)
+        uint24 msg_length "Message Length" defaults(0)
+        uint8  msg_type_id "Message Type" defaults(20)
             1  = "Set Chunk Size"
             2  = "Abort"
             3  = "Acknowledgement"
@@ -76,7 +76,7 @@ Object<RTMP> RTMP_CHUNK
             19 = "AMF0 Shared Object"
             20 = "AMF0 Command"
             22 = "Aggregate"
-        le_uint32 msg_stream_id "Message Stream ID"
+        le_uint32 msg_stream_id "Message Stream ID" defaults(0)
         payload chunk_data "Chunk Data"
     else:
         payload rest "Chunk Data"

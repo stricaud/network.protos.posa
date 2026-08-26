@@ -14,7 +14,7 @@ Object<main> MSSQL_TDS
     abbrev "tds"
     col "MSSQL TDS"
 
-    uint8 type "Type"
+    uint8 type "Type" defaults(1)
         1  = "SQL Batch"
         2  = "Pre-TDS7 Login"
         3  = "RPC"
@@ -28,7 +28,7 @@ Object<main> MSSQL_TDS
         17 = "Pre-Login"
         18 = "Pre-Login Response / Fed Auth Info"
 
-    uint8 status hex "Status"
+    uint8 status hex "Status" defaults(0x01)
         0x00 = "Normal"
         0x01 = "End of Message"
         0x02 = "Ignore Event"
@@ -36,10 +36,10 @@ Object<main> MSSQL_TDS
         0x08 = "Reset Connection Skip Transaction"
         0x10 = "Re-use Connection"
 
-    uint16 length "Total Length"
-    uint16 channel "Channel"
-    uint8 packet_number "Packet Number"
-    uint8 window "Window"
+    uint16 length "Total Length" defaults(8)
+    uint16 channel "Channel" defaults(0)
+    uint8 packet_number "Packet Number" defaults(1)
+    uint8 window "Window" defaults(0)
 
     payload body "Body"
 

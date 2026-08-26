@@ -30,7 +30,7 @@ Object<main> STUN
     # Class bits: C1 at bit 8, C0 at bit 4 (interleaved with method bits).
     # Method bits: 13-9 (M11-M7), 7-5 (M6-M4), 3-0 (M3-M0) — non-contiguous.
     # The enumerated values below combine method and class for all common types.
-    uint16 message_type "Message Type"
+    uint16 message_type "Message Type" defaults(0x0001)
         # ── Binding (method 0x001) — ICE connectivity checks ─────────────────
         0x0001 = "Binding Request"
         0x0011 = "Binding Indication"
@@ -57,10 +57,10 @@ Object<main> STUN
         0x0119 = "ChannelBind Error Response"
 
     # [2-3] Attribute payload length (bytes after the fixed 20-byte header)
-    uint16 message_length "Message Length"
+    uint16 message_length "Message Length" defaults(0)
 
     # [4-7] Magic cookie — always 0x2112A442; XOR'd into XOR-MAPPED-ADDRESS etc.
-    uint32 magic_cookie "Magic Cookie"
+    uint32 magic_cookie "Magic Cookie" defaults(0x2112A442)
 
     # [8-19] Transaction ID — 96-bit random opaque value
     bytes<12> transaction_id "Transaction ID"
@@ -73,7 +73,7 @@ Object<main> STUN
     # silently ignored.
     repeat until end as attribute "Attributes"
         label "%s" attr_type
-        uint16 attr_type "Attribute Type"
+        uint16 attr_type "Attribute Type" defaults(0x0001)
             # ── Comprehension-required (0x0000-0x7FFF) ────────────────────────
             0x0001 = "MAPPED-ADDRESS"
             0x0006 = "USERNAME"
@@ -106,7 +106,7 @@ Object<main> STUN
             0x802E = "MESSAGE-INTEGRITY-SHA256"
             0x802F = "PASSWORD-ALGORITHM"
             0x8030 = "USERHASH"
-        uint16 attr_length "Attribute Length"
+        uint16 attr_length "Attribute Length" defaults(0)
         bytes[attr_length] attr_value "Value"
 
     info "%s" message_type

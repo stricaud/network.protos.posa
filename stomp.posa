@@ -22,7 +22,7 @@ Object<STOMP> STOMP_CLIENT
     starts "STOMP\n" "CONNECT\n" "SEND\n" "SUBSCRIBE\n" "UNSUBSCRIBE\n"
            "ACK\n" "NACK\n" "BEGIN\n" "COMMIT\n" "ABORT\n" "DISCONNECT\n"
 
-    string command until "\n" "Command"
+    string command until "\n" "Command" defaults("CONNECT")
     kvblock headers sep ":" "Headers"
     payload body "Body"
 
@@ -33,7 +33,7 @@ Object<STOMP> STOMP_SERVER
     col "STOMP"
     starts "CONNECTED\n" "MESSAGE\n" "RECEIPT\n" "ERROR\n"
 
-    string command until "\n" "Command"
+    string command until "\n" "Command" defaults("CONNECTED")
     kvblock headers sep ":" "Headers"
     payload body "Body"
 

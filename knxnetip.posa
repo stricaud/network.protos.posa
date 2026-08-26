@@ -18,10 +18,10 @@ Object<main> KNXnetIP
     col "KNXnet/IP"
 
     # ── Fixed 6-byte KNXnet/IP Header ────────────────────────────────────────
-    uint8  header_length ["Header Length"]
-    uint8  version       ["Version"]
+    uint8  header_length ["Header Length"] defaults(6)
+    uint8  version ["Version"] defaults(0x10)
         0x10 = KNXnet/IP 1.0
-    uint16 service_type  ["Service Type"]
+    uint16 service_type ["Service Type"] defaults(0x0420)
         0x0201 = SEARCH_REQUEST
         0x0202 = SEARCH_RESPONSE
         0x0203 = DESCRIPTION_REQUEST
@@ -39,7 +39,7 @@ Object<main> KNXnetIP
         0x0530 = ROUTING_INDICATION
         0x0531 = ROUTING_LOST_MESSAGE
         0x0532 = ROUTING_BUSY
-    uint16 total_length ["Total Length"]
+    uint16 total_length ["Total Length"] defaults(6)
 
     # ── TUNNELLING_REQUEST (0x0420) ───────────────────────────────────────────
     # The tunnelling request is the most common KNXnet/IP message type.  After
@@ -47,12 +47,12 @@ Object<main> KNXnetIP
     # a cEMI (Common External Message Interface) frame carrying the raw KNX
     # telegram.  The sequence counter is echoed in the corresponding ACK.
     when service_type == 0x0420:
-        uint8  conn_header_len ["Conn Header Length"]
-        uint8  channel_id      ["Channel ID"]
-        uint8  seq_counter     ["Sequence Counter"]
-        uint8  reserved        ["Reserved"]
+        uint8  conn_header_len ["Conn Header Length"] defaults(4)
+        uint8  channel_id ["Channel ID"] defaults(1)
+        uint8  seq_counter ["Sequence Counter"] defaults(0)
+        uint8  reserved ["Reserved"] defaults(0)
         # cEMI frame — message code selects the KNX telegram direction
-        uint8  cemi_msg_code   ["cEMI Message Code"]
+        uint8  cemi_msg_code ["cEMI Message Code"] defaults(0x11)
             0x11 = L_data.req
             0x2E = L_data.con
             0x29 = L_data.ind
@@ -62,10 +62,10 @@ Object<main> KNXnetIP
     # ACK carries the same 4-byte connection header as the request; the echoed
     # sequence counter lets the sender correlate with the original request.
     when service_type == 0x0421:
-        uint8  conn_header_len ["Conn Header Length"]
-        uint8  channel_id      ["Channel ID"]
-        uint8  seq_counter     ["Sequence Counter"]
-        uint8  status          ["Status"]
+        uint8  conn_header_len ["Conn Header Length"] defaults(4)
+        uint8  channel_id ["Channel ID"] defaults(1)
+        uint8  seq_counter ["Sequence Counter"] defaults(0)
+        uint8  status ["Status"] defaults(0)
             0x00 = No Error
             0x04 = Tunnelling Error
 

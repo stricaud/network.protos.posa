@@ -4,9 +4,9 @@
 Object<main> ISAKMP
     bytes<8> initiator_cookie
     bytes<8> responder_cookie
-    uint8    next_payload = 0
-    uint8    version = 0x10
-    uint8    exchange_type = 2
+    uint8    next_payload defaults(0)
+    uint8    version defaults(0x10)
+    uint8    exchange_type defaults(2)
         NONE             = 0
         BASE             = 1
         IDENTITY_PROTECT = 2
@@ -15,6 +15,6 @@ Object<main> ISAKMP
         INFORMATIONAL    = 5
         QUICK_MODE       = 32
         NEW_GROUP_MODE   = 33
-    uint8    flags = 0
-    uint32   message_id = 0
-    uint32   length = 28
+    uint8    flags defaults(0)
+    uint32   message_id defaults(0)
+    uint32   length defaults(28)

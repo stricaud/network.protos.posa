@@ -3,5 +3,5 @@
 # Typically sent as UDP broadcast to port 9 (or 7), or as a raw Ethernet frame.
 # Set sync to ff:ff:ff:ff:ff:ff and target to 16 repetitions of the MAC to wake.
 Object<main> WOL
-    bytes<6>  sync
+    bytes<6>  sync defaults("\xff\xff\xff\xff\xff\xff")
     bytes<96> target

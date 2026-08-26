@@ -3,7 +3,7 @@
 # ts_msg_type: transportSpecific(4) | messageType(4). version is always 2.
 # correction_field is in nanoseconds scaled by 2^16 (subnanosecond precision).
 Object<main> PTPv2
-    uint8     ts_msg_type = 0x00
+    uint8     ts_msg_type defaults(0x00)
         SYNC              = 0x00
         DELAY_REQ         = 0x01
         PDELAY_REQ        = 0x02
@@ -14,15 +14,15 @@ Object<main> PTPv2
         ANNOUNCE          = 0x0B
         SIGNALING         = 0x0C
         MANAGEMENT        = 0x0D
-    uint8     version = 0x02
-    uint16    message_len = 44
-    uint8     domain_num = 0
-    uint8     minor_sdoid = 0
-    uint16    flags = 0
+    uint8     version defaults(0x02)
+    uint16    message_len defaults(44)
+    uint8     domain_num defaults(0)
+    uint8     minor_sdoid defaults(0)
+    uint16    flags defaults(0)
     bytes<8>  correction_field
-    uint32    msg_type_specific = 0
+    uint32    msg_type_specific defaults(0)
     bytes<8>  src_clock_id
-    uint16    src_port_num = 1
-    uint16    seq_id = 0
-    uint8     control = 0
-    uint8     log_interval = 0x7F
+    uint16    src_port_num defaults(1)
+    uint16    seq_id defaults(0)
+    uint8     control defaults(0)
+    uint8     log_interval defaults(0x7F)

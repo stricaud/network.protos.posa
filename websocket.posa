@@ -8,7 +8,7 @@ Object<main> WebSocket
     col "WebSocket"
 
     # Byte 0: FIN flag, reserved bits, and opcode
-    uint8 flags_opcode "Flags/Opcode"
+    uint8 flags_opcode "Flags/Opcode" defaults(0x81)
     bits flags_opcode fin      7 1 "FIN"
     bits flags_opcode rsv1     6 1 "RSV1"
     bits flags_opcode rsv2     5 1 "RSV2"
@@ -22,15 +22,15 @@ Object<main> WebSocket
         PONG         = 10
 
     # Byte 1: MASK flag and 7-bit base payload length
-    uint8 mask_len_byte "Mask/Length"
+    uint8 mask_len_byte "Mask/Length" defaults(0x80)
     bits mask_len_byte mask        7 1 "Mask"
     bits mask_len_byte payload_len 0 7 "Payload Length"
 
     # Extended payload length — only present when base payload_len indicates it
     when payload_len == 126:
-        uint16 ext_payload_len "Extended Payload Length"
+        uint16 ext_payload_len "Extended Payload Length" defaults(0)
     when payload_len == 127:
-        uint64 ext_payload_len_64 "Extended Payload Length (64-bit)"
+        uint64 ext_payload_len_64 "Extended Payload Length (64-bit)" defaults(0)
 
     # Masking key — 4 bytes, present only when MASK bit is set (client frames)
     when mask == 1:

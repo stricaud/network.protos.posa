@@ -3,18 +3,18 @@
 # actor_state is a bitmask; common values: 0x47=DEFAULTED|AGGREGATION|TIMEOUT|ACTIVITY,
 # 0x3D=DISTRIBUTING|COLLECTING|SYNCHRONIZATION|AGGREGATION|ACTIVITY (fully up).
 Object<main> LACP
-    uint8    subtype = 0x01
+    uint8    subtype defaults(0x01)
         LACP   = 0x01
         MARKER = 0x02
-    uint8    version = 0x01
-    uint8    actor_type = 0x01
-    uint8    actor_len = 0x14
-    uint16   actor_sys_priority = 32768
+    uint8    version defaults(0x01)
+    uint8    actor_type defaults(0x01)
+    uint8    actor_len defaults(0x14)
+    uint16   actor_sys_priority defaults(32768)
     bytes<6> actor_sys_id
-    uint16   actor_key = 0
-    uint16   actor_port_priority = 32768
-    uint16   actor_port = 1
-    uint8    actor_state = 0x47
+    uint16   actor_key defaults(0)
+    uint16   actor_port_priority defaults(32768)
+    uint16   actor_port defaults(1)
+    uint8    actor_state defaults(0x47)
         LACP_ACTIVITY    = 0x01
         LACP_TIMEOUT     = 0x02
         AGGREGATION      = 0x04

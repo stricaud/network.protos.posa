@@ -46,9 +46,9 @@ Object<main> SMPP
     abbrev "smpp"
     col "SMPP"
 
-    uint32 command_length   "Command Length"
-    uint32 command_id       hex lookup SmppCommandIds "Command ID"
-    uint32 command_status   hex "Command Status"
+    uint32 command_length "Command Length" defaults(16)
+    uint32 command_id       hex lookup SmppCommandIds "Command ID" defaults(0x00000009)
+    uint32 command_status   hex "Command Status" defaults(0)
         0x00000000 = "ESME_ROK (Success)"
         0x00000001 = "ESME_RINVMSGLEN"
         0x00000002 = "ESME_RINVCMDLEN"
@@ -75,8 +75,8 @@ Object<main> SMPP
         0x00000076 = "ESME_RINVESMCLASS"
         0x00000077 = "ESME_RCNTSUBDL"
         0x00000078 = "ESME_RSUBMITFAIL"
-    uint32 sequence_number  "Sequence Number"
-    payload body            "PDU Body"
+    uint32 sequence_number "Sequence Number" defaults(1)
+    payload body           "PDU Body"
 
     info "SMPP %s seq=%u" command_id, sequence_number
 

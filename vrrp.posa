@@ -2,13 +2,13 @@
 # IP protocol 112, multicast 224.0.0.18. ver_type: ver(4)=2 | type(4)=1 (ADVERTISEMENT).
 # adver_int in seconds; priority 255 = owner, 100 = default, 0 = release mastership.
 Object<main> VRRP
-    uint8  ver_type = 0x21
-    uint8  vrid = 1
-    uint8  priority = 100
-    uint8  count_ip = 1
-    uint8  auth_type = 0
+    uint8  ver_type defaults(0x21)
+    uint8  vrid defaults(1)
+    uint8  priority defaults(100)
+    uint8  count_ip defaults(1)
+    uint8  auth_type defaults(0)
         NO_AUTH     = 0
         SIMPLE_TEXT = 1
         IP_AUTH_HDR = 2
-    uint8  adver_int = 1
-    uint16 checksum = 0
+    uint8  adver_int defaults(1)
+    uint16 checksum defaults(0)

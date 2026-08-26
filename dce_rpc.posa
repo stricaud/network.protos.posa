@@ -157,33 +157,33 @@ Lookup DcerpcAuthLevels
 # Defined before the object that `include`s it: include resolves in a single
 # forward pass, so the object has to already exist at that point.
 Object DcerpcCtxItem
-    le_uint16 ctx_id "Context ID"
-    uint8 num_trans_items "Num Trans Items"
-    uint8 ctx_reserved "Reserved"
+    le_uint16 ctx_id "Context ID" defaults(0)
+    uint8 num_trans_items "Num Trans Items" defaults(1)
+    uint8 ctx_reserved "Reserved" defaults(0)
     # The interface the client wants to call, and which version of it.
     uuid abstract_syntax lookup DcerpcInterfaces "Abstract Syntax"
     # Remember which interface this context id means, for the life of the flow.
     # Every Request afterwards names the interface only by this number.
     bind interface[ctx_id] = abstract_syntax
-    le_uint16 if_ver "Interface Ver"
-    le_uint16 if_ver_minor "Interface Ver Minor"
+    le_uint16 if_ver "Interface Ver" defaults(0)
+    le_uint16 if_ver_minor "Interface Ver Minor" defaults(0)
     repeat num_trans_items as transfer "Transfer Syntaxes"
         uuid transfer_syntax lookup DcerpcTransferSyntaxes "Transfer Syntax"
-        le_uint32 transfer_ver "Transfer Syntax Ver"
+        le_uint32 transfer_ver "Transfer Syntax Ver" defaults(2)
         label "%s" transfer_syntax
 
 Object<main> DCE_RPC
     abbrev "dcerpc"
     col "DCE/RPC"
 
-    uint8 version = 5 "Version"
-    uint8 minor_version "Minor Version"
+    uint8 version "Version" defaults(5)
+    uint8 minor_version "Minor Version" defaults(0)
 
     # Connection-oriented PDU types. The connectionless (UDP) form reuses 0, 2
     # and 3 for request/response/fault but assigns 1 and 4-10 to its own
     # ping/working/nocall/fack machinery; those are deliberately not listed
     # here, because this decoder is bound to TCP.
-    uint8 packet_type "Packet Type"
+    uint8 packet_type "Packet Type" defaults(11)
         0  = "Request"
         2  = "Response"
         3  = "Fault"
@@ -198,7 +198,7 @@ Object<main> DCE_RPC
         19 = "Orphaned"
         20 = "RPC-over-HTTP RTS"
 
-    uint8 flags hex "Flags"
+    uint8 flags hex "Flags" defaults(0x03)
     bits flags first_frag 0 1 "First Fragment"
     bits flags last_frag 1 1 "Last Fragment"
     bits flags cancel_pend 2 1 "Cancel Pending"
@@ -209,44 +209,44 @@ Object<main> DCE_RPC
     bits flags object_uuid 7 1 "Object UUID Present"
 
     # Byte order for everything that follows, plus character and float encoding.
-    uint8 drep0 hex "Data Representation"
+    uint8 drep0 hex "Data Representation" defaults(0x10)
     bits drep0 byteorder 4 4 "Byte order"
         0 = "Big-endian"
         1 = "Little-endian"
     bits drep0 character 0 4 "Character"
         0 = "ASCII"
         1 = "EBCDIC"
-    uint8 drep_float "Float Representation"
+    uint8 drep_float "Float Representation" defaults(0)
         0 = "IEEE"
         1 = "VAX"
         2 = "Cray"
         3 = "IBM"
-    uint16 drep_reserved hex "Reserved"
+    uint16 drep_reserved hex "Reserved" defaults(0)
 
-    le_uint16 frag_length "Fragment Length"
+    le_uint16 frag_length "Fragment Length" defaults(16)
     # Non-zero means an authentication trailer sits at the very end of the PDU.
-    le_uint16 auth_length "Auth Length"
-    le_uint32 call_id hex "Call ID"
+    le_uint16 auth_length "Auth Length" defaults(0)
+    le_uint32 call_id hex "Call ID" defaults(1)
 
     # ── Bind / Alter_context ──────────────────────────────────────────────────
     # The packet that says what this connection is for. A client may offer
     # several presentation contexts at once; each names an interface and the
     # transfer syntaxes it can marshal with.
     when packet_type == 11:
-        le_uint16 max_xmit_frag "Max Xmit Frag"
-        le_uint16 max_recv_frag "Max Recv Frag"
-        le_uint32 assoc_group "Assoc Group"
-        uint8 num_ctx_items "Num Ctx Items"
+        le_uint16 max_xmit_frag "Max Xmit Frag" defaults(4280)
+        le_uint16 max_recv_frag "Max Recv Frag" defaults(4280)
+        le_uint32 assoc_group "Assoc Group" defaults(0)
+        uint8 num_ctx_items "Num Ctx Items" defaults(1)
         bytes<3> bind_reserved "Reserved"
         repeat num_ctx_items as ctx_item "Context Items"
             include DcerpcCtxItem
             label "Context %u: %s" ctx_id, abstract_syntax
 
     when packet_type == 14:
-        le_uint16 max_xmit_frag "Max Xmit Frag"
-        le_uint16 max_recv_frag "Max Recv Frag"
-        le_uint32 assoc_group "Assoc Group"
-        uint8 num_ctx_items "Num Ctx Items"
+        le_uint16 max_xmit_frag "Max Xmit Frag" defaults(4280)
+        le_uint16 max_recv_frag "Max Recv Frag" defaults(4280)
+        le_uint32 assoc_group "Assoc Group" defaults(0)
+        uint8 num_ctx_items "Num Ctx Items" defaults(1)
         bytes<3> bind_reserved "Reserved"
         repeat num_ctx_items as ctx_item "Context Items"
             include DcerpcCtxItem
@@ -258,59 +258,59 @@ Object<main> DCE_RPC
     # arithmetic this grammar does not have — so the results are left as bytes
     # rather than decoded from a guessed offset.
     when packet_type == 12:
-        le_uint16 max_xmit_frag "Max Xmit Frag"
-        le_uint16 max_recv_frag "Max Recv Frag"
-        le_uint32 assoc_group "Assoc Group"
-        le_uint16 sec_addr_len "Scndry Addr Len"
+        le_uint16 max_xmit_frag "Max Xmit Frag" defaults(4280)
+        le_uint16 max_recv_frag "Max Recv Frag" defaults(4280)
+        le_uint32 assoc_group "Assoc Group" defaults(0)
+        le_uint16 sec_addr_len "Scndry Addr Len" defaults(0)
         str[sec_addr_len] sec_addr "Scndry Addr"
         # The result list starts on the next 4-byte boundary after sec_addr.
         seek (offset + 3) & ~3
-        uint8 num_results "Num Results"
+        uint8 num_results "Num Results" defaults(1)
         bytes<3> results_reserved "Reserved"
         repeat num_results as result "Context Results"
-            le_uint16 ack_result "Result"
+            le_uint16 ack_result "Result" defaults(0)
                 0 = "Acceptance"
                 1 = "User rejection"
                 2 = "Provider rejection"
                 3 = "Negotiate ACK"
-            le_uint16 ack_reason "Reason"
+            le_uint16 ack_reason "Reason" defaults(0)
                 0 = "Reason not specified"
                 1 = "Abstract syntax not supported"
                 2 = "Proposed transfer syntaxes not supported"
                 3 = "Local limit exceeded"
             uuid ack_trans_id lookup DcerpcTransferSyntaxes "Transfer Syntax"
-            le_uint32 ack_trans_ver "Transfer Syntax Ver"
+            le_uint32 ack_trans_ver "Transfer Syntax Ver" defaults(2)
             label "%s" ack_result
 
     when packet_type == 15:
-        le_uint16 max_xmit_frag "Max Xmit Frag"
-        le_uint16 max_recv_frag "Max Recv Frag"
-        le_uint32 assoc_group "Assoc Group"
-        le_uint16 sec_addr_len "Scndry Addr Len"
+        le_uint16 max_xmit_frag "Max Xmit Frag" defaults(4280)
+        le_uint16 max_recv_frag "Max Recv Frag" defaults(4280)
+        le_uint32 assoc_group "Assoc Group" defaults(0)
+        le_uint16 sec_addr_len "Scndry Addr Len" defaults(0)
         str[sec_addr_len] sec_addr "Scndry Addr"
         # The result list starts on the next 4-byte boundary after sec_addr.
         seek (offset + 3) & ~3
-        uint8 num_results "Num Results"
+        uint8 num_results "Num Results" defaults(1)
         bytes<3> results_reserved "Reserved"
         repeat num_results as result "Context Results"
-            le_uint16 ack_result "Result"
+            le_uint16 ack_result "Result" defaults(0)
                 0 = "Acceptance"
                 1 = "User rejection"
                 2 = "Provider rejection"
                 3 = "Negotiate ACK"
-            le_uint16 ack_reason "Reason"
+            le_uint16 ack_reason "Reason" defaults(0)
                 0 = "Reason not specified"
                 1 = "Abstract syntax not supported"
                 2 = "Proposed transfer syntaxes not supported"
                 3 = "Local limit exceeded"
             uuid ack_trans_id lookup DcerpcTransferSyntaxes "Transfer Syntax"
-            le_uint32 ack_trans_ver "Transfer Syntax Ver"
+            le_uint32 ack_trans_ver "Transfer Syntax Ver" defaults(2)
             label "%s" ack_result
 
     # ── Bind_nak ──────────────────────────────────────────────────────────────
     # The bind was refused outright — no context was established.
     when packet_type == 13:
-        le_uint16 reject_reason "Reject Reason"
+        le_uint16 reject_reason "Reject Reason" defaults(0)
             0 = "Reason not specified"
             1 = "Temporary congestion"
             2 = "Local limit exceeded"
@@ -321,25 +321,25 @@ Object<main> DCE_RPC
             7 = "No PSAP available"
             8 = "Authentication type not recognized"
             9 = "Invalid checksum"
-        uint8 num_protocols "Number of Protocols"
+        uint8 num_protocols "Number of Protocols" defaults(0)
         payload nak_versions "Supported Versions"
 
     # ── Request ───────────────────────────────────────────────────────────────
     # opnum selects the operation *within* the interface bound to ctx_id. What
     # the pair means needs the BIND from earlier in the connection — see Limits.
     when packet_type == 0:
-        le_uint32 alloc_hint "Alloc hint"
-        le_uint16 cn_ctx_id "Context ID"
-        le_uint16 opnum "Opnum"
+        le_uint32 alloc_hint "Alloc hint" defaults(0)
+        le_uint16 cn_ctx_id "Context ID" defaults(0)
+        le_uint16 opnum "Opnum" defaults(0)
         recall interface[cn_ctx_id] as iface lookup DcerpcInterfaces "Interface"
         payload stub_data "Stub data"
 
     # ── Response ──────────────────────────────────────────────────────────────
     when packet_type == 2:
-        le_uint32 alloc_hint "Alloc hint"
-        le_uint16 cn_ctx_id "Context ID"
-        uint8 cancel_count "Cancel count"
-        uint8 resp_reserved "Reserved"
+        le_uint32 alloc_hint "Alloc hint" defaults(0)
+        le_uint16 cn_ctx_id "Context ID" defaults(0)
+        uint8 cancel_count "Cancel count" defaults(0)
+        uint8 resp_reserved "Reserved" defaults(0)
         recall interface[cn_ctx_id] as iface lookup DcerpcInterfaces "Interface"
         payload stub_data "Stub data"
 
@@ -347,12 +347,12 @@ Object<main> DCE_RPC
     # status is the RPC-level error; a call rejected for access reasons shows up
     # here rather than as a response.
     when packet_type == 3:
-        le_uint32 alloc_hint "Alloc hint"
-        le_uint16 cn_ctx_id "Context ID"
-        uint8 cancel_count "Cancel count"
-        uint8 fault_reserved "Reserved"
+        le_uint32 alloc_hint "Alloc hint" defaults(0)
+        le_uint16 cn_ctx_id "Context ID" defaults(0)
+        uint8 cancel_count "Cancel count" defaults(0)
+        uint8 fault_reserved "Reserved" defaults(0)
         recall interface[cn_ctx_id] as iface lookup DcerpcInterfaces "Interface"
-        le_uint32 status hex "Status"
+        le_uint32 status hex "Status" defaults(0)
             0x00000005 = "nca_s_fault_access_denied"
             0x000006d3 = "nca_s_unk_if"
             0x1c000001 = "nca_s_fault_other"
@@ -377,11 +377,11 @@ Object<main> DCE_RPC
     # expression forms are for.
     when auth_length >= 1:
         seek frag_length - auth_length - 8
-        uint8 auth_type lookup DcerpcAuthTypes "Auth type"
-        uint8 auth_level lookup DcerpcAuthLevels "Auth level"
-        uint8 auth_pad_len "Auth pad length"
-        uint8 auth_rsrvd "Auth Rsrvd"
-        le_uint32 auth_ctx_id hex "Auth Context ID"
+        uint8 auth_type lookup DcerpcAuthTypes "Auth type" defaults(0)
+        uint8 auth_level lookup DcerpcAuthLevels "Auth level" defaults(0)
+        uint8 auth_pad_len "Auth pad length" defaults(0)
+        uint8 auth_rsrvd "Auth Rsrvd" defaults(0)
+        le_uint32 auth_ctx_id hex "Auth Context ID" defaults(0)
         bytes[auth_length] auth_credentials "Auth Credentials"
 
     info "DCE/RPC %s call=%u %s" packet_type, call_id, iface

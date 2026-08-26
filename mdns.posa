@@ -49,7 +49,7 @@ Object<main> MDNS_RR
     abbrev "mdns"
 
     dnsname name "Name"
-    uint16 type "Type"
+    uint16 type "Type" defaults(1)
         A     = 1
         NS    = 2
         CNAME = 5
@@ -64,7 +64,7 @@ Object<main> MDNS_RR
         NSEC  = 47
         HTTPS = 65
         ANY   = 255
-    uint16 class mask 0x7fff "Class"
+    uint16 class mask 0x7fff "Class" defaults(1)
         IN  = 1
         CH  = 3
         ANY = 255
@@ -73,8 +73,8 @@ Object<main> MDNS_RR
     bits class flush 15 1 "Cache flush"
         No flush = 0
         Flush    = 1
-    uint32 ttl "Time to live"
-    uint16 rdlength "Data length"
+    uint32 ttl "Time to live" defaults(120)
+    uint16 rdlength "Data length" defaults(4)
 
     scope rdlength
         when type == 1:
@@ -90,29 +90,29 @@ Object<main> MDNS_RR
         when type == 2:
             dnsname rdata "Name server"
         when type == 15:
-            uint16 preference "Preference"
+            uint16 preference "Preference" defaults(10)
             dnsname rdata "Mail exchange"
         when type == 33:
             # SRV: resolves a service instance to host + port.
             # priority / weight guide client selection among multiple instances.
-            uint16 priority "Priority"
-            uint16 weight "Weight"
-            uint16 port "Port"
+            uint16 priority "Priority" defaults(0)
+            uint16 weight "Weight" defaults(0)
+            uint16 port "Port" defaults(0)
             dnsname rdata "Target"
         when type == 6:
             dnsname rdata "Primary name server"
             dnsname rname "Responsible mailbox"
-            uint32 serial "Serial"
-            uint32 refresh "Refresh"
-            uint32 retry "Retry"
-            uint32 expire "Expire"
-            uint32 minimum "Minimum TTL"
+            uint32 serial "Serial" defaults(1)
+            uint32 refresh "Refresh" defaults(3600)
+            uint32 retry "Retry" defaults(600)
+            uint32 expire "Expire" defaults(604800)
+            uint32 minimum "Minimum TTL" defaults(300)
         when type == 16:
             # TXT: DNS-SD metadata — length-prefixed key=value strings with no
             # count, so we loop until the rdata scope is exhausted.
             repeat until end as txt
                 label "%s" rdata
-                uint8 txtlen "Length"
+                uint8 txtlen "Length" defaults(0)
                 str[txtlen] rdata "Text"
         when type == 41:
             # OPT: EDNS0 options pseudo-RR; treat as opaque.
@@ -131,8 +131,8 @@ Object<main> mDNS
 
     # Header — identical to DNS.  In mDNS queries the id is always 0x0000;
     # a non-zero id signals a legacy unicast DNS query tunnelled over port 5353.
-    uint16 id "Transaction ID"
-    uint16 flags "Flags"
+    uint16 id "Transaction ID" defaults(0)
+    uint16 flags "Flags" defaults(0)
         bits flags qr      15 1 "Response"
             Query    = 0
             Response = 1
@@ -159,10 +159,10 @@ Object<main> mDNS
             NXDomain = 3
             NotImp   = 4
             Refused  = 5
-    uint16 questions  "Questions"
-    uint16 answers    "Answer RRs"
-    uint16 authority  "Authority RRs"
-    uint16 additional "Additional RRs"
+    uint16 questions "Questions" defaults(1)
+    uint16 answers "Answer RRs" defaults(0)
+    uint16 authority "Authority RRs" defaults(0)
+    uint16 additional "Additional RRs" defaults(0)
 
     # ── Questions ─────────────────────────────────────────────────────────────
     # Each question carries a name, a type, and a class.  The QU bit (bit 15 of
@@ -172,7 +172,7 @@ Object<main> mDNS
     repeat questions as query "Queries"
         label "%s: type %s, class %s" qname, qtype, qclass
         dnsname qname "Name"
-        uint16 qtype "Type"
+        uint16 qtype "Type" defaults(12)
             A     = 1
             NS    = 2
             CNAME = 5
@@ -187,7 +187,7 @@ Object<main> mDNS
             NSEC  = 47
             HTTPS = 65
             ANY   = 255
-        uint16 qclass mask 0x7fff "Class"
+        uint16 qclass mask 0x7fff "Class" defaults(1)
             IN   = 1
             CH   = 3
             NONE = 254

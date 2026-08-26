@@ -54,7 +54,7 @@ Object<main> EtherNetIP
 
     # Command — identifies the encapsulation service; sent in both directions.
     # The target echoes the same command code in its response.
-    le_uint16 command ["Command"]
+    le_uint16 command ["Command"] defaults(0x0065)
         NOP               = 0x0000
         ListServices      = 0x0063
         ListIdentity      = 0x0064
@@ -65,17 +65,17 @@ Object<main> EtherNetIP
 
     # Length — byte count of the encapsulation data that follows the 24-byte
     # header.  0 for commands that carry no data (NOP, UnRegisterSession).
-    le_uint16 length ["Data Length"]
+    le_uint16 length ["Data Length"] defaults(0)
 
     # Session Handle — assigned by the target in the RegisterSession reply;
     # must appear in every subsequent command within that session.
     # Originators send 0 in the RegisterSession request.
-    le_uint32 session_handle ["Session Handle"]
+    le_uint32 session_handle ["Session Handle"] defaults(0)
 
     # Status — encapsulation-level result code.  Always 0 in requests.
     # Non-zero in responses indicates the target rejected the command.
     # CIP-level errors are carried inside the CPF item data, not here.
-    le_uint32 status ["Status"]
+    le_uint32 status ["Status"] defaults(0)
         Success              = 0x00000000
         InvalidCommand       = 0x00000001
         InsufficientMemory   = 0x00000002
@@ -89,7 +89,7 @@ Object<main> EtherNetIP
     bytes<8> sender_context ["Sender Context"]
 
     # Options — reserved for future use; must be 0.
-    le_uint32 options ["Options"]
+    le_uint32 options ["Options"] defaults(0)
 
     # ── Encapsulation data — presence and format depend on command ────────────
 
@@ -102,13 +102,13 @@ Object<main> EtherNetIP
     when command == 0x0070:
         # SendRRData — unconnected explicit messaging; most PCCC / CIP messages
         # use this command.  Interface handle 0 selects the CIP encapsulator.
-        le_uint32 interface_handle ["Interface Handle"]
+        le_uint32 interface_handle ["Interface Handle"] defaults(0)
             CIP = 0x00000000
-        le_uint16 timeout ["Timeout (s)"]
-        le_uint16 item_count ["Item Count"]
+        le_uint16 timeout ["Timeout (s)"] defaults(0)
+        le_uint16 item_count ["Item Count"] defaults(2)
         repeat item_count as cpf_item ["CPF Item"]
             label "Item 0x%x" type_id
-            le_uint16 type_id ["Item Type ID"]
+            le_uint16 type_id ["Item Type ID"] defaults(0)
                 NullAddress     = 0x0000
                 ListIdentity    = 0x000C
                 ConnectedAddr   = 0x00A1
@@ -118,7 +118,7 @@ Object<main> EtherNetIP
                 SockaddrO2T     = 0x8000
                 SockaddrT2O     = 0x8001
                 SeqAddrItem     = 0x8002
-            le_uint16 item_length ["Item Length"]
+            le_uint16 item_length ["Item Length"] defaults(0)
             scope item_length
                 payload item_data ["Item Data"]
 
@@ -126,39 +126,39 @@ Object<main> EtherNetIP
         # SendUnitData — connected explicit messaging; a connection must have been
         # established first (via ForwardOpen).  Timeout is 0 (connection manages
         # timing); sequence address item carries the connection ID.
-        le_uint32 interface_handle ["Interface Handle"]
+        le_uint32 interface_handle ["Interface Handle"] defaults(0)
             CIP = 0x00000000
-        le_uint16 timeout ["Timeout (s)"]
-        le_uint16 item_count ["Item Count"]
+        le_uint16 timeout ["Timeout (s)"] defaults(0)
+        le_uint16 item_count ["Item Count"] defaults(2)
         repeat item_count as cpf_item ["CPF Item"]
             label "Item 0x%x" type_id
-            le_uint16 type_id ["Item Type ID"]
+            le_uint16 type_id ["Item Type ID"] defaults(0)
                 NullAddress     = 0x0000
                 ConnectedAddr   = 0x00A1
                 ConnectedData   = 0x00B1
                 UnconnectedData = 0x00B2
                 SeqAddrItem     = 0x8002
-            le_uint16 item_length ["Item Length"]
+            le_uint16 item_length ["Item Length"] defaults(0)
             scope item_length
                 payload item_data ["Item Data"]
 
     when command == 0x0064:
         # ListIdentity — target returns identity objects describing itself.
         # Used by network scanning tools and IO scanners to discover devices.
-        le_uint16 item_count ["Item Count"]
+        le_uint16 item_count ["Item Count"] defaults(2)
         repeat item_count as id_item ["Identity Item"]
-            le_uint16 type_id ["Item Type ID"]
-            le_uint16 item_length ["Item Length"]
+            le_uint16 type_id ["Item Type ID"] defaults(0)
+            le_uint16 item_length ["Item Length"] defaults(0)
             scope item_length
                 payload item_data ["Item Data"]
 
     when command == 0x0063:
         # ListServices — target returns the list of CIP services it supports.
         # Typically returns one item describing the "Communications" service.
-        le_uint16 item_count ["Item Count"]
+        le_uint16 item_count ["Item Count"] defaults(2)
         repeat item_count as svc_item ["Service Item"]
-            le_uint16 type_id ["Item Type ID"]
-            le_uint16 item_length ["Item Length"]
+            le_uint16 type_id ["Item Type ID"] defaults(0)
+            le_uint16 item_length ["Item Length"] defaults(0)
             scope item_length
                 payload item_data ["Item Data"]
 

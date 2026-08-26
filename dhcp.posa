@@ -18,16 +18,16 @@ Object<main> DHCP
     abbrev "dhcp"
     col "DHCP"
 
-    uint8 op "Message Type"
+    uint8 op "Message Type" defaults(1)
         Boot Request = 1
         Boot Reply = 2
-    uint8 htype "Hardware Type"
+    uint8 htype "Hardware Type" defaults(1)
         Ethernet = 1
-    uint8 hlen "Hardware Address Length"
-    uint8 hops "Hops"
-    uint32 xid hex "Transaction ID"
-    uint16 secs "Seconds Elapsed"
-    uint16 flags hex "Flags"
+    uint8 hlen "Hardware Address Length" defaults(6)
+    uint8 hops "Hops" defaults(0)
+    uint32 xid hex "Transaction ID" defaults(0)
+    uint16 secs "Seconds Elapsed" defaults(0)
+    uint16 flags hex "Flags" defaults(0)
         bits flags broadcast 15 1 "Broadcast"
     ip4 ciaddr "Client IP Address"
     ip4 yiaddr "Your (client) IP Address"
@@ -37,11 +37,11 @@ Object<main> DHCP
     bytes<10> chaddr_pad "Client Hardware Address Padding"
     bytes<64> sname "Server Host Name"
     bytes<128> file "Boot File Name"
-    uint32 cookie hex "Magic Cookie"
+    uint32 cookie hex "Magic Cookie" defaults(0x63825363)
 
     repeat until end as option "Options"
         label "%s: %s%s%s" opt_code, msg_type, opt_ip, opt_text
-        uint8 opt_code "Option"
+        uint8 opt_code "Option" defaults(53)
             Pad = 0
             Subnet Mask = 1
             Router = 3
@@ -61,10 +61,10 @@ Object<main> DHCP
             End = 255
         when opt_code > 0:
             when opt_code < 255:
-                uint8 opt_len "Length"
+                uint8 opt_len "Length" defaults(1)
                 scope opt_len
                     when opt_code == 53:
-                        uint8 msg_type "DHCP Message Type"
+                        uint8 msg_type "DHCP Message Type" defaults(1)
                             Discover = 1
                             Offer = 2
                             Request = 3
@@ -86,7 +86,7 @@ Object<main> DHCP
                     when opt_code == 54:
                         ip4 opt_ip "Server Identifier"
                     when opt_code == 51:
-                        uint32 lease_time "IP Address Lease Time"
+                        uint32 lease_time "IP Address Lease Time" defaults(86400)
                     when opt_code == 12:
                         str[opt_len] opt_text "Host Name"
                     when opt_code == 15:
@@ -96,7 +96,7 @@ Object<main> DHCP
                     when opt_code == 55:
                         repeat until end as requested
                             label "Requested: %s" param
-                            uint8 param "Parameter"
+                            uint8 param "Parameter" defaults(1)
                                 Subnet Mask = 1
                                 Router = 3
                                 Domain Name Server = 6

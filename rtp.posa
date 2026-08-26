@@ -30,14 +30,14 @@ Object<main> RTP
     col "RTP"
 
     # ── Byte 0: version, padding, extension, CSRC count ─────────────────────────
-    uint8 first_byte "Flags"
+    uint8 first_byte "Flags" defaults(0x80)
         bits first_byte version    6 2 "Version"
         bits first_byte padding    5 1 "Padding"
         bits first_byte extension  4 1 "Extension"
         bits first_byte csrc_count 0 4 "CC (CSRC Count)"
 
     # ── Byte 1: marker bit and payload type ──────────────────────────────────────
-    uint8 second_byte "Marker / Payload Type"
+    uint8 second_byte "Marker / Payload Type" defaults(0)
         bits second_byte marker       7 1 "Marker"
         bits second_byte payload_type 0 7 "Payload Type"
             PCMU (G.711 µ-law)          =  0
@@ -98,14 +98,14 @@ Object<main> RTP
             Dynamic (127)               = 127
 
     # ── Bytes 2–11: sequence, timestamp, SSRC ────────────────────────────────────
-    uint16 sequence_number "Sequence Number"
-    uint32 timestamp "Timestamp"
-    uint32 ssrc hex "SSRC"
+    uint16 sequence_number "Sequence Number" defaults(0)
+    uint32 timestamp "Timestamp" defaults(0)
+    uint32 ssrc hex "SSRC" defaults(0)
 
     # ── Bytes 12+: CSRC list (CC entries, 4 bytes each) ──────────────────────────
     repeat csrc_count as csrc "CSRC List"
         label "CSRC 0x%x" csrc_id
-        uint32 csrc_id hex "CSRC"
+        uint32 csrc_id hex "CSRC" defaults(0)
 
     # ── Optional header extension (present when X bit = 1) ───────────────────────
     # ext_length counts 32-bit words; actual extension data is ext_length × 4 bytes.
@@ -113,8 +113,8 @@ Object<main> RTP
     # expression is available in the length specifier; add a manual extension decoder
     # for profiles that pad to exact word boundaries (RFC 5285 one-byte/two-byte headers).
     when extension == 1:
-        uint16 ext_profile hex "Extension Profile"
-        uint16 ext_length "Extension Length (words)"
+        uint16 ext_profile hex "Extension Profile" defaults(0)
+        uint16 ext_length "Extension Length (words)" defaults(0)
         bytes[ext_length] ext_data "Extension Data"
 
     # ── Media payload ─────────────────────────────────────────────────────────────

@@ -34,12 +34,12 @@ Object<DISCORD> DISCORD_IP_DISCOVERY
     abbrev "discord"
     col "Discord"
 
-    uint32 type hex "Packet Type"
+    uint32 type hex "Packet Type" defaults(0x00010046)
         0x00010046 = "IP Discovery Request"
         0x00020046 = "IP Discovery Response"
-    uint32 ssrc hex "SSRC"
+    uint32 ssrc hex "SSRC" defaults(0)
     str<64> client_ip "Client IP"
-    uint16 port "Client Port"
+    uint16 port "Client Port" defaults(0)
 
     info "Discord IP discovery type=0x%08x ssrc=0x%08x" type, ssrc
 
@@ -47,9 +47,9 @@ Object<DISCORD> DISCORD_KEEPALIVE
     abbrev "discord"
     col "Discord"
 
-    uint32 magic hex "Magic"
+    uint32 magic hex "Magic" defaults(0x1337cafe)
         0x1337cafe = "Keep-Alive"
-    uint32 nonce "Nonce"
+    uint32 nonce "Nonce" defaults(0)
 
     info "Discord keep-alive nonce=%u" nonce
 
@@ -57,12 +57,12 @@ Object<DISCORD> DISCORD_VOICE
     abbrev "discord"
     col "Discord"
 
-    uint8  flags        hex "Flags"
-    uint8  payload_type hex "Payload Type"
+    uint8  flags        hex "Flags" defaults(0x80)
+    uint8  payload_type hex "Payload Type" defaults(0x78)
         0x78 = "Discord Opus"
-    uint16 sequence     "Sequence"
-    uint32 timestamp    "RTP Timestamp"
-    uint32 ssrc         hex "SSRC"
+    uint16 sequence "Sequence" defaults(0)
+    uint32 timestamp "RTP Timestamp" defaults(0)
+    uint32 ssrc         hex "SSRC" defaults(0)
     payload encrypted_payload "Encrypted Opus Payload"
 
     info "Discord voice ssrc=0x%08x seq=%u" ssrc, sequence

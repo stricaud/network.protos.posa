@@ -21,7 +21,7 @@ Object<main> ACTIVISION
     abbrev "activision"
     col "Activision"
 
-    uint8 packet_type "Packet Type"
+    uint8 packet_type "Packet Type" defaults(0x0C)
         0x0C = "Client Request (0x0C02 variant)"
         0x0D = "Server Reply (0x0D02 variant)"
         0x29 = "Client Subsequent"

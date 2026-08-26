@@ -52,20 +52,20 @@ Object<Syslog> SYSLOG_5424
     # After the closing '>' the runtime computes:
     #   syslog.facility = integer(pri_raw) >> 3   (Facility enum, 0-23)
     #   syslog.severity = integer(pri_raw) & 0x07 (Severity enum, 0-7)
-    string pri_raw until ">" "Priority"
+    string pri_raw until ">" "Priority" defaults("<34")
 
     # Version byte '1' (0x31) + mandatory SP (0x20).
     # Fails and causes GROUP fallthrough for any RFC 3164 message.
-    bytes<2> version_sp = "1 " "Version"
+    bytes<2> version_sp "Version" defaults("1 ")
 
     # TIMESTAMP: ISO 8601 extended, e.g. "2003-10-11T22:14:15.003Z" or "-"
-    string timestamp until " " "Timestamp"
+    string timestamp until " " "Timestamp" defaults("2003-10-11T22:14:15.003Z")
 
     # HOSTNAME, APP-NAME, PROCID, MSGID — each NILVALUE-able as "-"
-    string hostname until " " "Hostname"
-    string appname  until " " "App-Name"
-    string procid   until " " "ProcID"
-    string msgid    until " " "MsgID"
+    string hostname until " " "Hostname" defaults("mymachine")
+    string appname  until " " "App-Name" defaults("su")
+    string procid   until " " "ProcID" defaults("-")
+    string msgid    until " " "MsgID" defaults("ID47")
 
     # Structured Data: NILVALUE '-' or one-or-more '[SD-ID PARAM-LIST]' elements.
     # 'until " "' correctly handles the NILVALUE case and single-element SD whose
@@ -74,7 +74,7 @@ Object<Syslog> SYSLOG_5424
     # be truncated at the first space inside the element; multi-element SD is
     # captured up to the first ']' + space only.  Full SD tokenisation requires
     # a custom implementation extension.
-    string sd_raw until " " "Structured Data"
+    string sd_raw until " " "Structured Data" defaults("-")
 
     # MSG: optional UTF-8 payload (may be preceded by a UTF-8 BOM, EF BB BF)
     payload message "Message"
@@ -94,15 +94,15 @@ Object<Syslog> SYSLOG_3164
 
     # Priority block: same encoding as RFC 5424.
     # Runtime computes syslog.facility and syslog.severity as above.
-    string pri_raw until ">" "Priority"
+    string pri_raw until ">" "Priority" defaults("<34")
 
     # HEADER: fixed 15-byte timestamp "Mmm DD HH:MM:SS"
-    bytes<15> timestamp "Timestamp"
+    bytes<15> timestamp "Timestamp" defaults("Oct 11 22:14:15")
     # Separator SP between HEADER and HOSTNAME
-    bytes<1>  ts_sp    "SP"
+    bytes<1>  ts_sp "SP" defaults(" ")
 
     # HOSTNAME is up to 255 chars; in practice a short DNS name or IP literal
-    string hostname until " " "Hostname"
+    string hostname until " " "Hostname" defaults("mymachine")
 
     # MSG optionally begins with a TAG field "program[pid]: " — parsed as payload
     payload message "Message"

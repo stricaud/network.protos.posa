@@ -27,18 +27,18 @@ Object<main> SNMP
     col "SNMP"
 
     # ── Outer BER SEQUENCE ────────────────────────────────────────────────────
-    uint8 sequence_tag = 0x30
+    uint8 sequence_tag defaults(0x30)
         0x30 = "SEQUENCE"
 
-    uint8 sequence_length "Sequence Length"
+    uint8 sequence_length "Sequence Length" defaults(0)
 
     # ── version INTEGER ───────────────────────────────────────────────────────
-    uint8 version_tag = 0x02
+    uint8 version_tag defaults(0x02)
         0x02 = "INTEGER"
 
-    uint8 version_tag_length "Version Length"
+    uint8 version_tag_length "Version Length" defaults(1)
 
-    uint8 version "Version"
+    uint8 version "Version" defaults(1)
         0 = "SNMPv1"
         1 = "SNMPv2c"
         3 = "SNMPv3"
@@ -50,15 +50,15 @@ Object<main> SNMP
         payload v3_message "SNMPv3 Message"
     else:
         # SNMPv1 / SNMPv2c: community OCTET STRING (tag 0x04)
-        uint8 community_tag = 0x04
+        uint8 community_tag defaults(0x04)
             0x04 = "OCTET STRING"
 
-        uint8 community_length "Community Length"
+        uint8 community_length "Community Length" defaults(6)
 
-        str[community_length] community_string "Community String"
+        str[community_length] community_string "Community String" defaults("public")
 
         # PDU type — context-class constructed tag (0xA0–0xA8)
-        uint8 pdu_type "PDU Type"
+        uint8 pdu_type "PDU Type" defaults(0xA0)
             0xA0 = "GetRequest"
             0xA1 = "GetNextRequest"
             0xA2 = "Response"
@@ -69,23 +69,23 @@ Object<main> SNMP
             0xA7 = "SNMPv2-Trap"
             0xA8 = "Report"
 
-        uint8 pdu_length "PDU Length"
+        uint8 pdu_length "PDU Length" defaults(0)
 
         # request-id INTEGER (tag 0x02, variable length 1–4 bytes)
-        uint8 req_id_tag = 0x02
+        uint8 req_id_tag defaults(0x02)
             0x02 = "INTEGER"
 
-        uint8 req_id_length "Request-ID Length"
+        uint8 req_id_length "Request-ID Length" defaults(4)
 
         bytes[req_id_length] request_id "Request-ID"
 
         # error-status INTEGER
-        uint8 error_status_tag = 0x02
+        uint8 error_status_tag defaults(0x02)
             0x02 = "INTEGER"
 
-        uint8 error_status_length "Error-Status Length"
+        uint8 error_status_length "Error-Status Length" defaults(1)
 
-        uint8 error_status "Error-Status"
+        uint8 error_status "Error-Status" defaults(0)
             0  = "noError"
             1  = "tooBig"
             2  = "noSuchName"
@@ -107,12 +107,12 @@ Object<main> SNMP
             18 = "inconsistentName"
 
         # error-index INTEGER
-        uint8 error_index_tag = 0x02
+        uint8 error_index_tag defaults(0x02)
             0x02 = "INTEGER"
 
-        uint8 error_index_length "Error-Index Length"
+        uint8 error_index_length "Error-Index Length" defaults(1)
 
-        uint8 error_index "Error-Index"
+        uint8 error_index "Error-Index" defaults(0)
 
         # Remaining bytes: VarBindList SEQUENCE OF VarBind
         payload varbinds "Variable Bindings"

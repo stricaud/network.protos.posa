@@ -28,17 +28,17 @@ Object<TEREDO> TEREDO_AUTH
     abbrev "teredo"
     col "Teredo"
 
-    uint16 indicator     hex "Indicator"
+    uint16 indicator     hex "Indicator" defaults(0x0001)
         0x0001 = "Authentication"
-    uint8  id_len        "Client ID Length"
-    uint8  au_len        "Authentication Length"
+    uint8  id_len "Client ID Length" defaults(0)
+    uint8  au_len "Authentication Length" defaults(0)
     bytes[id_len] client_id "Client Identifier"
     bytes[au_len] auth_value "Authentication Value"
     bytes<8> nonce       hex "Nonce"
-    uint8  confirmation  "Confirmation"
+    uint8  confirmation "Confirmation" defaults(0)
         0 = "OK"
         1 = "Failure"
-    payload ipv6_packet  "IPv6 Packet"
+    payload ipv6_packet "IPv6 Packet"
 
     info "Teredo Auth confirm=%u" confirmation
 
@@ -46,11 +46,11 @@ Object<TEREDO> TEREDO_ORIGIN
     abbrev "teredo"
     col "Teredo"
 
-    uint16 indicator     hex "Indicator"
+    uint16 indicator     hex "Indicator" defaults(0x0000)
         0x0000 = "Origin Indication"
-    uint16 obf_port      hex "Obfuscated Port (NOT of client port)"
-    uint32 obf_addr      hex "Obfuscated Address (NOT of client IPv4)"
-    payload ipv6_packet  "IPv6 Packet"
+    uint16 obf_port      hex "Obfuscated Port (NOT of client port)"    defaults(0)
+    uint32 obf_addr      hex "Obfuscated Address (NOT of client IPv4)" defaults(0)
+    payload ipv6_packet      "IPv6 Packet"
 
     info "Teredo Origin"
 

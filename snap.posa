@@ -3,7 +3,7 @@
 # interpreted as a standard IEEE EtherType (same values as Ethernet II).
 Object<main> SNAP
     bytes<3> oui
-    uint16   etype = 0x0800
+    uint16   etype defaults(0x0800)
         IPV4       = 0x0800
         IPV6       = 0x86DD
         ARP        = 0x0806

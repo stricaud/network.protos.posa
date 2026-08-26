@@ -13,10 +13,10 @@ Object<main> MONGODB
     abbrev "mongodb"
     col "MongoDB"
 
-    le_uint32 message_length "Message Length"
-    le_uint32 request_id    "Request ID"
-    le_uint32 response_to   "Response To"
-    le_uint32 op_code       "Op Code"
+    le_uint32 message_length "Message Length" defaults(16)
+    le_uint32 request_id "Request ID" defaults(1)
+    le_uint32 response_to "Response To" defaults(0)
+    le_uint32 op_code "Op Code" defaults(2013)
         1    = "OP_REPLY (deprecated)"
         2001 = "OP_UPDATE (deprecated)"
         2002 = "OP_INSERT (deprecated)"

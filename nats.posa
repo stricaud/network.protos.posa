@@ -20,7 +20,7 @@ Object<NATS> NATS_SERVER
     starts "INFO " "PING\r" "PONG\r" "+OK\r" "-ERR "
            "MSG " "HMSG "
 
-    string op until " \r" "Operation"
+    string op until " \r" "Operation" defaults("INFO")
     payload rest "Rest"
 
     info "%s" op
@@ -31,7 +31,7 @@ Object<NATS> NATS_CLIENT
     starts "CONNECT " "PUB " "SUB " "UNSUB "
            "PING\r" "PONG\r" "HPUB " "HSUB "
 
-    string op until " \r" "Operation"
+    string op until " \r" "Operation" defaults("CONNECT")
     payload rest "Rest"
 
     info "%s" op

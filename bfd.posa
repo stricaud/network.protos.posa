@@ -3,7 +3,7 @@
 # vers_diag: Ver(3)=1 | Diag(5). sta_flags: State(2) | P|F|C|A|D|M flags.
 # Intervals are in microseconds. Auth section (if any) follows the mandatory header.
 Object<main> BFD
-    uint8  vers_diag = 0x20
+    uint8  vers_diag defaults(0x20)
         DIAG_NO_DIAG            = 0x20
         DIAG_CTRL_DETECT_EXPIRY = 0x21
         DIAG_ECHO_FAILED        = 0x22
@@ -13,15 +13,15 @@ Object<main> BFD
         DIAG_CONCAT_PATH_DOWN   = 0x26
         DIAG_ADMIN_DOWN         = 0x27
         DIAG_REVERSE_CONCAT     = 0x28
-    uint8  sta_flags = 0xC0
+    uint8  sta_flags defaults(0xC0)
         STATE_ADMIN_DOWN = 0x00
         STATE_DOWN       = 0x40
         STATE_INIT       = 0x80
         STATE_UP         = 0xC0
-    uint8  detect_mult = 3
-    uint8  length = 24
-    uint32 my_discriminator = 1
-    uint32 your_discriminator = 0
-    uint32 desired_min_tx = 300000
-    uint32 required_min_rx = 300000
-    uint32 required_min_echo = 0
+    uint8  detect_mult defaults(3)
+    uint8  length defaults(24)
+    uint32 my_discriminator defaults(1)
+    uint32 your_discriminator defaults(0)
+    uint32 desired_min_tx defaults(300000)
+    uint32 required_min_rx defaults(300000)
+    uint32 required_min_echo defaults(0)

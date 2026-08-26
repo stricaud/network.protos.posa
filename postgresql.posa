@@ -25,8 +25,8 @@ Object<PostgreSQL> Startup
     col "PGSQL"
     starts "\x00\x00"
 
-    uint32 startup_length "Message Length"
-    uint32 protocol "Protocol Version"
+    uint32 startup_length "Message Length" defaults(0)
+    uint32 protocol "Protocol Version" defaults(0x00030000)
         PostgreSQL v3 = 0x00030000
         SSL Request = 0x04D2162F
         GSS Enc Request = 0x04D21630
@@ -51,7 +51,7 @@ Object<PostgreSQL> Message
     abbrev "postgresql"
     col "PGSQL"
 
-    uint8 msg_type "Message Type"
+    uint8 msg_type "Message Type" defaults(81)
         # Server → Client
         Authentication = 82          # 'R'
         ParameterStatus = 83         # 'S'  (conflicts with client Sync, server wins here)
@@ -87,11 +87,11 @@ Object<PostgreSQL> Message
         CopyDone = 99                # 'c'
         CopyFail = 102               # 'f'
 
-    uint32 msg_length "Message Length"
+    uint32 msg_length "Message Length" defaults(0)
 
     # ── Authentication request (server → client, msg_type == 'R' == 82) ──────────────
     when msg_type == 82:
-        uint32 auth_type "Authentication Type"
+        uint32 auth_type "Authentication Type" defaults(0)
             Authentication OK = 0
             Kerberos V5 = 2
             Cleartext Password = 3
@@ -107,14 +107,14 @@ Object<PostgreSQL> Message
 
     # ── ReadyForQuery (server → client, msg_type == 'Z' == 90) ───────────────────────
     when msg_type == 90:
-        uint8 tx_status "Transaction Status"
+        uint8 tx_status "Transaction Status" defaults(0)
             Idle = 73                # 'I'
             In Transaction = 84     # 'T'
             In Failed Transaction = 69  # 'E'
 
     # ── SimpleQuery (client → server, msg_type == 'Q' == 81) ─────────────────────────
     when msg_type == 81:
-        cstring query "Query String"
+        cstring query "Query String" defaults("SELECT 1")
 
     # ── CommandComplete (server → client, msg_type == 'C' == 67) ─────────────────────
     when msg_type == 67:
@@ -122,8 +122,8 @@ Object<PostgreSQL> Message
 
     # ── BackendKeyData (server → client, msg_type == 'K' == 75) ─────────────────────
     when msg_type == 75:
-        uint32 backend_pid "Backend PID"
-        uint32 secret_key "Secret Key"
+        uint32 backend_pid "Backend PID" defaults(0)
+        uint32 secret_key "Secret Key" defaults(0)
 
     # ── ParameterStatus (server → client, msg_type == 'S' == 83) ────────────────────
     when msg_type == 83:
@@ -137,7 +137,7 @@ Object<PostgreSQL> Message
     when msg_type == 69:
         repeat until "\x00" as error_field "Error Fields"
             label "%s" field_value
-            uint8 field_code "Field Code"
+            uint8 field_code "Field Code" defaults(0)
                 Severity = 83            # 'S'
                 Severity Nonloc = 86     # 'V'
                 SQL State = 67           # 'C'
@@ -160,22 +160,22 @@ Object<PostgreSQL> Message
 
     # ── RowDescription (server → client, msg_type == 'T' == 84) ─────────────────────
     when msg_type == 84:
-        uint16 field_count "Field Count"
+        uint16 field_count "Field Count" defaults(1)
         repeat field_count as row_field "Row Fields"
             label "%s" field_name
             cstring field_name "Field Name"
-            uint32 table_oid "Table OID"
-            uint16 column_attr "Column Attribute"
-            uint32 type_oid "Type OID"
-            uint16 type_size "Type Size"
-            uint32 type_modifier "Type Modifier"
-            uint16 format_code "Format Code"
+            uint32 table_oid "Table OID" defaults(0)
+            uint16 column_attr "Column Attribute" defaults(0)
+            uint32 type_oid "Type OID" defaults(0)
+            uint16 type_size "Type Size" defaults(0)
+            uint32 type_modifier "Type Modifier" defaults(0)
+            uint16 format_code "Format Code" defaults(0)
                 Text = 0
                 Binary = 1
 
     # ── DataRow (server → client, msg_type == 'D' == 68) ─────────────────────────────
     when msg_type == 68:
-        uint16 field_count "Field Count"
+        uint16 field_count "Field Count" defaults(1)
         payload row_data "Row Data"
 
     # ── PasswordMessage / SASL response (client → server, msg_type == 'p' == 112) ────

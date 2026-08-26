@@ -2,14 +2,14 @@
 # UDP, typically port 2055 or 9995. Flow records (48 bytes each) follow the header.
 # count = number of flow records in this datagram (max 30 per UDP packet).
 Object<main> NetFlowV5
-    uint16 version = 5
-    uint16 count = 0
-    uint32 sys_uptime = 0
-    uint32 unix_secs = 0
-    uint32 unix_nsecs = 0
-    uint32 flow_sequence = 0
-    uint8  engine_type = 0
+    uint16 version defaults(5)
+    uint16 count defaults(0)
+    uint32 sys_uptime defaults(0)
+    uint32 unix_secs defaults(0)
+    uint32 unix_nsecs defaults(0)
+    uint32 flow_sequence defaults(0)
+    uint8  engine_type defaults(0)
         RP  = 0
         VIP = 1
-    uint8  engine_id = 0
-    uint16 sampling_interval = 0
+    uint8  engine_id defaults(0)
+    uint16 sampling_interval defaults(0)

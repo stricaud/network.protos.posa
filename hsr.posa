@@ -24,7 +24,7 @@ Object<main> HSR
     abbrev "hsr"
     col "HSR"
 
-    uint16 path_lsdu hex "Path / LSDU Size"
+    uint16 path_lsdu hex "Path / LSDU Size" defaults(0)
     # The 4-bit path field is read two ways: as one value, and split into the
     # 3-bit network ID and the 1-bit lane ID that HSR actually uses.
     bits path_lsdu path 12 4 "Path"
@@ -37,11 +37,11 @@ Object<main> HSR
 
     # Incremented once per frame *pair*; both copies carry the same value,
     # which is what lets the receiver discard the second one.
-    uint16 sequence_nr "Sequence number"
+    uint16 sequence_nr "Sequence number" defaults(0)
 
     # The ethertype of the frame HSR is carrying — 0x88B8 GOOSE, 0x88BA
     # sampled values, 0x0800 IPv4.
-    uint16 type hex "Type"
+    uint16 type hex "Type" defaults(0x0800)
 
     payload data "Payload"
 

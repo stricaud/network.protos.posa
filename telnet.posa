@@ -20,10 +20,10 @@ Object<main> Telnet
     col "TELNET"
 
     # First byte: 0xFF marks an IAC sequence; anything else is raw terminal data.
-    uint8 iac "IAC Marker"
+    uint8 iac "IAC Marker" defaults(0xFF)
 
     when iac == 0xFF:
-        uint8 cmd "Command"
+        uint8 cmd "Command" defaults(0xFB)
             NOP                  = 0xF1
             Data Mark            = 0xF2
             Break                = 0xF3
@@ -43,7 +43,7 @@ Object<main> Telnet
         # SB (0xFA) and negotiation commands 0xFB–0xFE all carry an option byte.
         # Simple commands (NOP, Break, GA, AYT, …) end after the command byte.
         when cmd >= 0xFA:
-            uint8 option "Option"
+            uint8 option "Option" defaults(1)
                 Binary Transmission    = 0
                 Echo                   = 1
                 Suppress Go Ahead      = 3

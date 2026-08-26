@@ -18,15 +18,15 @@ Object<ZMTP> ZMTP3
     abbrev "zmtp"
     col "ZMTP"
 
-    uint8  sig_ff = 0xFF    hex "Signature Start"
+    uint8  sig_ff    hex "Signature Start" defaults(0xFF)
     bytes<8> padding        hex "Padding"
-    uint8  sig_7f = 0x7F   hex "Signature End"
-    uint8  version_major        "Version Major"
+    uint8  sig_7f   hex "Signature End" defaults(0x7F)
+    uint8  version_major "Version Major" defaults(3)
         ZMTP_2 = 2
         ZMTP_3 = 3
-    uint8  version_minor        "Version Minor"
-    bytes<20> mechanism         "Security Mechanism"
-    uint8  as_server            "Role"
+    uint8  version_minor "Version Minor" defaults(0)
+    bytes<20> mechanism "Security Mechanism" defaults("NULL")
+    uint8  as_server "Role" defaults(0)
         Client = 0
         Server = 1
     bytes<31> filler        hex "Filler"

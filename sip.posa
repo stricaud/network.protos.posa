@@ -96,14 +96,14 @@ Object<SIP> SIP_RESPONSE
     # The group dispatcher reads the first four bytes to tell a response
     # ("SIP/") from a request (method keyword).  0x5349502F = big-endian "SIP/"
     # After matching, seek 0 rewinds so the full status line can be read as text.
-    uint32 magic = 0x5349502F hex "Magic"
+    uint32 magic hex "Magic" defaults(0x5349502F)
     seek 0
 
-    string version until " " "SIP-Version"
+    string version until " " "SIP-Version" defaults("SIP/2.0")
 
-    string status_code until " " lookup SipStatusCodes "Status-Code"
+    string status_code until " " lookup SipStatusCodes "Status-Code" defaults("200")
 
-    string reason until "\r\n" "Reason-Phrase"
+    string reason until "\r\n" "Reason-Phrase" defaults("OK")
 
     kvblock headers "Headers"
 
@@ -120,12 +120,12 @@ Object<SIP> SIP_REQUEST
     starts "INVITE " "ACK " "BYE " "CANCEL " "OPTIONS " "REGISTER " "REFER " \
            "SUBSCRIBE " "NOTIFY " "INFO " "PRACK " "UPDATE " "MESSAGE " "PUBLISH "
 
-    string method until " " "Method"
+    string method until " " "Method" defaults("INVITE")
         # String identity enums removed — these were dead code (enum_name() only
         # does uint64 comparison and is never called for string fields).
 
-    string request_uri until " " "Request-URI"
-    string version until "\r\n" "SIP-Version"
+    string request_uri until " " "Request-URI" defaults("sip:user@example.com")
+    string version until "\r\n" "SIP-Version" defaults("SIP/2.0")
 
     kvblock headers "Headers"
 

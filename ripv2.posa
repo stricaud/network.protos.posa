@@ -1,8 +1,8 @@
 # RIPv2 header (RFC 2453)
 # UDP port 520. Header is 4 bytes; route entries follow (20 bytes each).
 Object<main> RIPv2
-    uint8  command = 2
+    uint8  command defaults(2)
         REQUEST  = 1
         RESPONSE = 2
-    uint8  version = 2
-    uint16 zero = 0
+    uint8  version defaults(2)
+    uint16 zero defaults(0)

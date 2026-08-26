@@ -16,7 +16,7 @@ Object<WHOIS> WHOIS_REQUEST
     col "WHOIS"
     starts "domain " "Domain " "nic " "AS" "ARIN " "RIPE " "-T "
 
-    string query until "\r\n" "Query"
+    string query until "\r\n" "Query" defaults("example.com")
     payload rest "Data"
 
     info "WHOIS query: %s" query

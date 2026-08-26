@@ -24,7 +24,7 @@ Object<main> MUMBLE
     abbrev "mumble"
     col "Mumble"
 
-    uint16 type "Message Type"
+    uint16 type "Message Type" defaults(0)
         0  = "Version"
         1  = "UDPTunnel"
         2  = "Authenticate"
@@ -52,7 +52,7 @@ Object<main> MUMBLE
         24 = "ServerConfig"
         25 = "SuggestConfig"
 
-    uint32 length "Payload Length"
+    uint32 length "Payload Length" defaults(0)
     bytes[length] body "Protobuf Body"
 
     info "%s len=%u" type, length

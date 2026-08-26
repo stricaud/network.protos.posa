@@ -58,11 +58,11 @@ Object<MEMCACHED> MEMCACHED_UDP
     abbrev "memcached"
     col "Memcached"
 
-    uint16 request_id       "Request ID"
-    uint16 sequence_number  "Sequence Number"
-    uint16 total_datagrams  "Total Datagrams"
-    uint16 reserved         "Reserved"
-    string command until " \r" lookup MemcachedCommands "Command"
+    uint16 request_id "Request ID" defaults(0)
+    uint16 sequence_number "Sequence Number" defaults(0)
+    uint16 total_datagrams "Total Datagrams" defaults(1)
+    uint16 reserved "Reserved" defaults(0)
+    string command until " \r" lookup MemcachedCommands "Command" defaults("get")
     payload rest "Rest"
 
     info "%s" command
@@ -78,7 +78,7 @@ Object<MEMCACHED> MEMCACHED_TCP
            "TOUCHED\r" "ERROR\r" "CLIENT_ERROR " "SERVER_ERROR " "END\r"
            "VALUE " "STAT " "VERSION "
 
-    string command until " \r" lookup MemcachedCommands "Command"
+    string command until " \r" lookup MemcachedCommands "Command" defaults("get")
     payload rest "Rest"
 
     info "%s" command
@@ -92,10 +92,10 @@ Object<MEMCACHED> MEMCACHED_BIN
     abbrev "memcached"
     col "Memcached"
 
-    uint8  magic hex "Magic"
+    uint8  magic hex "Magic" defaults(0x80)
         0x80 = "Request"
         0x81 = "Response"
-    uint8  opcode hex "Opcode"
+    uint8  opcode hex "Opcode" defaults(0)
         0x00 = "Get"
         0x01 = "Set"
         0x02 = "Add"
@@ -123,10 +123,10 @@ Object<MEMCACHED> MEMCACHED_BIN
         0x18 = "Flush Quietly"
         0x19 = "Append Quietly"
         0x1A = "Prepend Quietly"
-    uint16 key_length    "Key Length"
-    uint8  extras_length "Extras Length"
-    uint8  data_type     "Data Type"
-    uint16 vbucket_status hex "VBucket/Status"
+    uint16 key_length "Key Length" defaults(0)
+    uint8  extras_length "Extras Length" defaults(0)
+    uint8  data_type "Data Type" defaults(0)
+    uint16 vbucket_status hex "VBucket/Status" defaults(0)
         0x0000 = "No error"
         0x0001 = "Key not found"
         0x0002 = "Key exists"
@@ -135,10 +135,10 @@ Object<MEMCACHED> MEMCACHED_BIN
         0x0005 = "Item not stored"
         0x0081 = "Unknown command"
         0x0082 = "Out of memory"
-    uint32 total_body    "Total Body Length"
-    uint32 opaque        hex "Opaque"
-    uint64 cas           hex "CAS"
-    payload body         "Body"
+    uint32 total_body        "Total Body Length" defaults(0)
+    uint32 opaque        hex "Opaque"            defaults(0)
+    uint64 cas           hex "CAS"               defaults(0)
+    payload body             "Body"
 
     info "Memcached binary %s op=0x%02x" magic, opcode
 

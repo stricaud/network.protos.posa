@@ -17,7 +17,7 @@ Object<RSYNC> RSYNC_SERVER
     col "rsync"
     starts "@RSYNCD: "
 
-    string greeting until "\n" "Greeting"
+    string greeting until "\n" "Greeting" defaults("@RSYNCD: 31.0")
     info "%s" greeting
 
 Object<RSYNC> RSYNC_OK
@@ -25,7 +25,7 @@ Object<RSYNC> RSYNC_OK
     col "rsync"
     starts "@RSYNCD: OK"
 
-    string status until "\n" "Status"
+    string status until "\n" "Status" defaults("@RSYNCD: OK")
     info "%s" status
 
 Object<RSYNC> RSYNC_EXIT
@@ -33,7 +33,7 @@ Object<RSYNC> RSYNC_EXIT
     col "rsync"
     starts "@RSYNCD: EXIT"
 
-    string status until "\n" "Status"
+    string status until "\n" "Status" defaults("@RSYNCD: EXIT")
     info "%s" status
 
 Object<RSYNC> RSYNC_ERROR
@@ -41,7 +41,7 @@ Object<RSYNC> RSYNC_ERROR
     col "rsync"
     starts "@ERROR"
 
-    string error_msg until "\n" "Error"
+    string error_msg until "\n" "Error" defaults("@ERROR: unknown module")
     info "%s" error_msg
 
 Object<GROUP> RSYNC

@@ -28,7 +28,7 @@ Object<RAKNET> RAKNET_OFFLINE
     abbrev "raknet"
     col "RakNet"
 
-    uint8  message_id         "Message ID"
+    uint8  message_id "Message ID" defaults(0x01)
         UNCONNECTED_PING              = 0x01
         UNCONNECTED_PING_OPEN         = 0x02
         UNCONNECTED_PONG              = 0x1C
@@ -39,37 +39,37 @@ Object<RAKNET> RAKNET_OFFLINE
         INCOMPATIBLE_PROTOCOL_VERSION = 0x1D
 
     when message_id == 0x01:
-        uint64 send_ping_time "Ping Time"
-        bytes<16> offline_magic hex "Offline Magic"
+        uint64 send_ping_time "Ping Time" defaults(0)
+        bytes<16> offline_magic hex "Offline Magic" defaults("\x00\xff\xff\x00\xfe\xfe\xfe\xfe\xfd\xfd\xfd\xfd\x12\x34\x56\x78")
 
     when message_id == 0x1C:
-        uint64 send_ping_time "Ping Time"
-        uint64 server_guid    "Server GUID"
-        bytes<16> offline_magic hex "Offline Magic"
-        uint16 server_info_len "Server Info Length"
+        uint64 send_ping_time "Ping Time" defaults(0)
+        uint64 server_guid "Server GUID" defaults(0)
+        bytes<16> offline_magic hex "Offline Magic" defaults("\x00\xff\xff\x00\xfe\xfe\xfe\xfe\xfd\xfd\xfd\xfd\x12\x34\x56\x78")
+        uint16 server_info_len "Server Info Length" defaults(0)
         str[server_info_len] server_info "Server Info"
 
     when message_id == 0x05:
-        bytes<16> offline_magic hex "Offline Magic"
-        uint8  raknet_protocol_version "RakNet Protocol Version"
+        bytes<16> offline_magic hex "Offline Magic" defaults("\x00\xff\xff\x00\xfe\xfe\xfe\xfe\xfd\xfd\xfd\xfd\x12\x34\x56\x78")
+        uint8  raknet_protocol_version "RakNet Protocol Version" defaults(11)
         payload  null_padding "Null Padding (MTU)"
 
     when message_id == 0x06:
-        bytes<16> offline_magic hex "Offline Magic"
-        uint64 server_guid    "Server GUID"
-        uint8  use_security   "Use Security"
-        uint16 mtu            "MTU Size"
+        bytes<16> offline_magic hex "Offline Magic" defaults("\x00\xff\xff\x00\xfe\xfe\xfe\xfe\xfd\xfd\xfd\xfd\x12\x34\x56\x78")
+        uint64 server_guid "Server GUID" defaults(0)
+        uint8  use_security "Use Security" defaults(0)
+        uint16 mtu "MTU Size" defaults(1400)
 
     when message_id == 0x07:
-        bytes<16> offline_magic hex "Offline Magic"
-        uint64 client_guid    "Client GUID"
-        payload  body                  "Body"
+        bytes<16> offline_magic hex "Offline Magic" defaults("\x00\xff\xff\x00\xfe\xfe\xfe\xfe\xfd\xfd\xfd\xfd\x12\x34\x56\x78")
+        uint64 client_guid          "Client GUID"   defaults(0)
+        payload  body               "Body"
 
     when message_id == 0x08:
-        bytes<16> offline_magic hex "Offline Magic"
-        uint64 server_guid    "Server GUID"
-        uint16 mtu            "MTU Size"
-        payload  body                  "Body"
+        bytes<16> offline_magic hex "Offline Magic" defaults("\x00\xff\xff\x00\xfe\xfe\xfe\xfe\xfd\xfd\xfd\xfd\x12\x34\x56\x78")
+        uint64 server_guid          "Server GUID"   defaults(0)
+        uint16 mtu                  "MTU Size"      defaults(1400)
+        payload  body               "Body"
 
     else:
         payload body "Body"

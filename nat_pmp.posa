@@ -28,17 +28,17 @@ Object<NAT_PMP> NAT_PMP_REQUEST
     abbrev "nat_pmp"
     col "NAT-PMP"
 
-    uint8  version   "Version"
+    uint8  version "Version" defaults(0)
         0 = "NAT-PMP v0"
-    uint8  opcode    "Opcode"
+    uint8  opcode "Opcode" defaults(1)
         0 = "External Address"
         1 = "Map UDP"
         2 = "Map TCP"
-    uint16 reserved  "Reserved"
+    uint16 reserved "Reserved" defaults(0)
     when opcode != 0:
-        uint16 int_port  "Internal Port"
-        uint16 ext_port  "External Port"
-        uint32 lifetime  "Lifetime (seconds)"
+        uint16 int_port "Internal Port" defaults(0)
+        uint16 ext_port "External Port" defaults(0)
+        uint32 lifetime "Lifetime (seconds)" defaults(7200)
     else:
         payload rest "Data"
 
@@ -48,26 +48,26 @@ Object<NAT_PMP> NAT_PMP_RESPONSE
     abbrev "nat_pmp"
     col "NAT-PMP"
 
-    uint8  version   "Version"
+    uint8  version "Version" defaults(0)
         0 = "NAT-PMP v0"
-    uint8  opcode    "Opcode"
+    uint8  opcode "Opcode" defaults(128)
         128 = "External Address Response"
         129 = "Map UDP Response"
         130 = "Map TCP Response"
-    uint16 result_code "Result Code"
+    uint16 result_code "Result Code" defaults(0)
         0 = "Success"
         1 = "Unsupported Version"
         2 = "Not Authorized"
         3 = "Network Failure"
         4 = "Out of Resources"
         5 = "Unsupported Opcode"
-    uint32 seconds_since_epoch "Epoch Time"
+    uint32 seconds_since_epoch "Epoch Time" defaults(0)
     when opcode == 128:
         ip4 ext_addr "External Address"
     else:
-        uint16 int_port  "Internal Port"
-        uint16 ext_port  "External Port"
-        uint32 lifetime  "Lifetime (seconds)"
+        uint16 int_port "Internal Port" defaults(0)
+        uint16 ext_port "External Port" defaults(0)
+        uint32 lifetime "Lifetime (seconds)" defaults(7200)
 
     info "NAT-PMP resp op=%u result=%u" opcode, result_code
 
@@ -75,14 +75,14 @@ Object<NAT_PMP> PCP_REQUEST
     abbrev "nat_pmp"
     col "PCP"
 
-    uint8  version   "Version"
+    uint8  version "Version" defaults(2)
         2 = "PCP v2"
-    uint8  r_opcode  hex "R/Opcode"
+    uint8  r_opcode  hex "R/Opcode" defaults(0x01)
         0x00 = "Announce"
         0x01 = "Map"
         0x02 = "Peer"
-    uint16 reserved  "Reserved"
-    uint32 lifetime  "Requested Lifetime"
+    uint16 reserved "Reserved" defaults(0)
+    uint32 lifetime "Requested Lifetime" defaults(7200)
     bytes<16> client_ip "Client IP Address"
     payload pcp_options "PCP Options"
 

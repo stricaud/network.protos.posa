@@ -19,11 +19,11 @@ Object<main> VNC
     abbrev "vnc"
     col "VNC"
 
-    str<4> magic "Magic"
-    str<3> version_major "Version Major"
-    str<1> separator "Separator"
-    str<3> version_minor "Version Minor"
-    str<1> terminator "Terminator"
+    str<4> magic "Magic" defaults("RFB ")
+    str<3> version_major "Version Major" defaults("003")
+    str<1> separator "Separator" defaults(".")
+    str<3> version_minor "Version Minor" defaults("008")
+    str<1> terminator "Terminator" defaults("\n")
 
     payload rest "Post-Banner Data"
 

@@ -22,18 +22,18 @@ Object<SFLOW> SFLOW_V5
     abbrev "sflow"
     col "sFlow"
 
-    uint32 version "Version"
+    uint32 version "Version" defaults(5)
         2 = "sFlow v2"
         4 = "sFlow v4"
         5 = "sFlow v5"
-    uint32 agent_addr_type "Agent Address Type"
+    uint32 agent_addr_type "Agent Address Type" defaults(1)
         1 = "IPv4"
         2 = "IPv6"
     ip4    agent_address "Agent IPv4 Address"
-    uint32 sub_agent_id  "Sub-Agent ID"
-    uint32 sequence_num  "Sequence Number"
-    uint32 uptime        "System Uptime (ms)"
-    uint32 num_samples   "Number of Samples"
+    uint32 sub_agent_id  "Sub-Agent ID"       defaults(0)
+    uint32 sequence_num  "Sequence Number"    defaults(1)
+    uint32 uptime        "System Uptime (ms)" defaults(0)
+    uint32 num_samples   "Number of Samples"  defaults(1)
     payload samples      "Sample Records"
 
     info "sFlow v%u from %s samples=%u" version, agent_address, num_samples
@@ -42,16 +42,16 @@ Object<SFLOW> SFLOW_V2
     abbrev "sflow"
     col "sFlow"
 
-    uint32 version "Version"
+    uint32 version "Version" defaults(2)
         2 = "sFlow v2"
         4 = "sFlow v4"
-    uint32 agent_addr_type "Agent Address Type"
+    uint32 agent_addr_type "Agent Address Type" defaults(1)
         1 = "IPv4"
         2 = "IPv6"
     ip4    agent_address "Agent IPv4 Address"
-    uint32 sequence_num  "Sequence Number"
-    uint32 uptime        "System Uptime (ms)"
-    uint32 num_samples   "Number of Samples"
+    uint32 sequence_num  "Sequence Number"    defaults(1)
+    uint32 uptime        "System Uptime (ms)" defaults(0)
+    uint32 num_samples   "Number of Samples"  defaults(1)
     payload samples      "Sample Records"
 
     info "sFlow v%u from %s samples=%u" version, agent_address, num_samples

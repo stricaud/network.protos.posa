@@ -23,23 +23,23 @@ Object<main> LDAP
 
     # ── Outer SEQUENCE wrapper ────────────────────────────────────────────────
     # 0x30 = universal constructed tag 16 (SEQUENCE)
-    uint8 sequence_tag = 0x30 hex "Sequence Tag"
+    uint8 sequence_tag hex "Sequence Tag" defaults(0x30)
 
     # Short-form BER length (1 byte). Covers messages up to 127 bytes.
     # Long-form lengths (first byte 0x81 or 0x82) will misparse here but the
     # operation tag is still visible after the messageID TLV at a fixed offset.
-    uint8 sequence_len "Sequence Length"
+    uint8 sequence_len "Sequence Length" defaults(0)
 
     # ── MessageID — ASN.1 INTEGER ─────────────────────────────────────────────
     # 0x02 = universal primitive tag 2 (INTEGER)
-    uint8 msg_id_tag = 0x02 hex "Message ID Tag"
-    uint8 msg_id_len "Message ID Length"
+    uint8 msg_id_tag hex "Message ID Tag" defaults(0x02)
+    uint8 msg_id_len "Message ID Length" defaults(1)
     bytes[msg_id_len] message_id hex "Message ID"
 
     # ── ProtocolOp — Application-class CHOICE ─────────────────────────────────
     # Each operation is encoded as a constructed Application tag (0x60–0x79).
     # The tag value alone identifies the operation type; the body varies per op.
-    uint8 op_tag hex "Operation"
+    uint8 op_tag hex "Operation" defaults(0x60)
         BindRequest           = 0x60
         BindResponse          = 0x61
         UnbindRequest         = 0x62

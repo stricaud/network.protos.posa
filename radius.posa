@@ -109,7 +109,7 @@ Object<main> RADIUS
     abbrev "radius"
     col "RADIUS"
 
-    uint8 code "Code"
+    uint8 code "Code" defaults(1)
         1   = "Access-Request"
         2   = "Access-Accept"
         3   = "Access-Reject"
@@ -144,14 +144,14 @@ Object<main> RADIUS
         45  = "CoA-NAK"
         255 = "Reserved"
 
-    uint8 identifier "Identifier"
-    uint16 length "Length"
+    uint8 identifier "Identifier" defaults(1)
+    uint16 length "Length" defaults(20)
     bytes<16> authenticator "Authenticator"
 
     repeat until end as attribute "Attributes"
         label "%s" attr_type
-        uint8 attr_type lookup RadiusAttributeTypes "Type"
-        uint8 attr_length "Length"
+        uint8 attr_type lookup RadiusAttributeTypes "Type" defaults(1)
+        uint8 attr_length "Length" defaults(2)
         scope attr_length - 2
             payload value "Value"
 

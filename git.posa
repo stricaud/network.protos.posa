@@ -26,7 +26,7 @@ Object<GIT> GIT_UPLOAD_PACK
     col "Git"
     starts "git-upload-pack"
 
-    string service until "\x00\r\n" "Service"
+    string service until "\x00\r\n" "Service" defaults("git-upload-pack")
     payload rest "Advertisement"
 
     info "Git %s" service
@@ -35,8 +35,8 @@ Object<GIT> GIT_PKTLINE
     abbrev "git"
     col "Git"
 
-    str<4>  pkt_len    "Packet Length (hex)"
-    payload pkt_data   "Packet Data"
+    str<4>  pkt_len  "Packet Length (hex)" defaults("0000")
+    payload pkt_data "Packet Data"
 
     info "Git pkt-line len=%s" pkt_len
 

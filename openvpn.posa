@@ -12,7 +12,7 @@ Object<main> OpenVPN
     abbrev "openvpn"
     col "OpenVPN"
 
-    uint8 opcode_keyid ["Opcode/Key ID"]
+    uint8 opcode_keyid ["Opcode/Key ID"] defaults(0x38)
 
     bits opcode_keyid opcode 3 5 ["Opcode"]
         1  = P_CONTROL_HARD_RESET_CLIENT_V1

@@ -75,12 +75,12 @@ Object<RTSP> RTSP_RESPONSE
 
     # Dispatch: the first four bytes of a response are "RTSP" = 0x52545350.
     # After the check passes, seek 0 rewinds so the status line is read as text.
-    uint32 magic = 0x52545350 hex "Magic"
+    uint32 magic hex "Magic" defaults(0x52545350)
     seek 0
 
-    string version     until " "    "Version"
-    string status_code until " " lookup RtspStatusCodes "Status Code"
-    string reason      until "\r\n" "Reason Phrase"
+    string version     until " " "Version" defaults("RTSP/1.0")
+    string status_code until " " lookup RtspStatusCodes "Status Code" defaults("200")
+    string reason      until "\r\n" "Reason Phrase" defaults("OK")
 
     kvblock headers "Headers"
     payload body "Body"
@@ -101,9 +101,9 @@ Object<RTSP> RTSP_REQUEST
     starts "OPTIONS " "DESCRIBE " "ANNOUNCE " "SETUP " "PLAY " "PAUSE "
            "TEARDOWN " "GET_PARAMETER " "SET_PARAMETER " "RECORD " "REDIRECT "
 
-    string method  until " "    "Method"
-    string uri     until " "    "Request URI"
-    string version until "\r\n" "Version"
+    string method  until " " "Method" defaults("DESCRIBE")
+    string uri     until " " "Request URI" defaults("rtsp://example.com/stream")
+    string version until "\r\n" "Version" defaults("RTSP/1.0")
 
     kvblock headers "Headers"
     payload body "Body"

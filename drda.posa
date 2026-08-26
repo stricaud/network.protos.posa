@@ -47,9 +47,9 @@ Object<main> DRDA
     abbrev "drda"
     col "DRDA"
 
-    uint16 length      "DDM Length"
-    uint8  magic = 0xD0 hex "Magic"
-    uint8  format      hex "Format"
+    uint16 length "DDM Length" defaults(10)
+    uint8  magic hex "Magic" defaults(0xD0)
+    uint8  format      hex "Format" defaults(0x10)
 
     bits format chained   7 1 "Chained"
     bits format continued 6 1 "Continued"
@@ -59,9 +59,9 @@ Object<main> DRDA
         Object       = 3
         Correlation  = 4
 
-    uint16 correlid    "Correlation ID"
-    uint16 length2     "Length (echo)"
-    uint16 codepoint lookup DrdaCodepoints "Codepoint"
+    uint16 correlid "Correlation ID" defaults(1)
+    uint16 length2 "Length (echo)" defaults(4)
+    uint16 codepoint lookup DrdaCodepoints "Codepoint" defaults(0x1041)
 
     payload body "DDM Object Data"
 

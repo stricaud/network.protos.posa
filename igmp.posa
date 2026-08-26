@@ -16,30 +16,30 @@ Object<main> IGMP
     abbrev "igmp"
     col "IGMP"
 
-    uint8 type "Type"
+    uint8 type "Type" defaults(0x11)
         Membership Query = 0x11
         IGMPv1 Membership Report = 0x12
         IGMPv2 Membership Report = 0x16
         Leave Group = 0x17
         IGMPv3 Membership Report = 0x22
-    uint8 max_resp "Max Resp Time"
-    uint16 checksum "Checksum"
+    uint8 max_resp "Max Resp Time" defaults(100)
+    uint16 checksum "Checksum" defaults(0)
 
     # v3 membership report: reserved, then N group records
     when type == 0x22:
-        uint16 reserved "Reserved"
-        uint16 num_records "Num Group Records"
+        uint16 reserved "Reserved" defaults(0)
+        uint16 num_records "Num Group Records" defaults(1)
         repeat num_records as record "Group Records"
             label "%s: %s (%u source(s))" record_type, maddr, num_sources
-            uint8 record_type "Record Type"
+            uint8 record_type "Record Type" defaults(1)
                 MODE_IS_INCLUDE = 1
                 MODE_IS_EXCLUDE = 2
                 CHANGE_TO_INCLUDE = 3
                 CHANGE_TO_EXCLUDE = 4
                 ALLOW_NEW_SOURCES = 5
                 BLOCK_OLD_SOURCES = 6
-            uint8 aux_len "Aux Data Length"
-            uint16 num_sources "Num Sources"
+            uint8 aux_len "Aux Data Length" defaults(0)
+            uint16 num_sources "Num Sources" defaults(0)
             ip4 maddr "Multicast Address"
             repeat num_sources as source "Source Addresses"
                 label "Source: %s" saddr

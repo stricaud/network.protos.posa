@@ -149,20 +149,20 @@ Object<GTP> GTP_V1
     abbrev "gtp"
     col "GTP"
 
-    uint8 flags hex "Flags"
+    uint8 flags hex "Flags" defaults(0x30)
         0x20 = "GTPv1, GTP-U"
         0x22 = "GTPv1, GTP-U, seq"
         0x30 = "GTPv1, GTP-Prime"
         0x32 = "GTPv1, seq"
 
-    uint8 message_type lookup GtpV1MessageTypes "Message Type"
-    uint16 total_length "Length"
-    uint32 teid "TEID"
+    uint8 message_type lookup GtpV1MessageTypes "Message Type" defaults(255)
+    uint16 total_length "Length" defaults(0)
+    uint32 teid "TEID" defaults(0)
 
     when flags == 0x22:
-        uint16 sequence_num "Sequence Number"
-        uint8 npdu_number "N-PDU Number"
-        uint8 next_ext_type "Next Extension Header Type"
+        uint16 sequence_num "Sequence Number" defaults(0)
+        uint8 npdu_number "N-PDU Number" defaults(0)
+        uint8 next_ext_type "Next Extension Header Type" defaults(0)
         payload body "Payload"
     else:
         payload body "Payload"
@@ -173,25 +173,25 @@ Object<GTP> GTP_V2
     abbrev "gtp"
     col "GTP"
 
-    uint8 flags hex "Flags"
+    uint8 flags hex "Flags" defaults(0x48)
         0x40 = "GTPv2, no TEID"
         0x48 = "GTPv2, with TEID"
 
-    uint8 message_type lookup GtpV2MessageTypes "Message Type"
-    uint16 message_length "Message Length"
+    uint8 message_type lookup GtpV2MessageTypes "Message Type" defaults(1)
+    uint16 message_length "Message Length" defaults(0)
 
     when flags == 0x48:
-        uint32 teid "TEID"
-        uint8 seq1 "Seq High"
-        uint8 seq2 "Seq Mid"
-        uint8 seq3 "Seq Low"
-        uint8 spare "Spare"
+        uint32 teid "TEID" defaults(0)
+        uint8 seq1 "Seq High" defaults(0)
+        uint8 seq2 "Seq Mid" defaults(0)
+        uint8 seq3 "Seq Low" defaults(0)
+        uint8 spare "Spare" defaults(0)
         payload body "IEs"
     else:
-        uint8 seq1 "Seq High"
-        uint8 seq2 "Seq Mid"
-        uint8 seq3 "Seq Low"
-        uint8 spare "Spare"
+        uint8 seq1 "Seq High" defaults(0)
+        uint8 seq2 "Seq Mid" defaults(0)
+        uint8 seq3 "Seq Low" defaults(0)
+        uint8 spare "Spare" defaults(0)
         payload body "IEs"
 
     info "GTPv2 type=%u" message_type

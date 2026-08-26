@@ -43,7 +43,7 @@ Object<QUIC> QUIC_LONG
            "\xe0" "\xe1" "\xe2" "\xe3"
            "\xf0" "\xf1" "\xf2" "\xf3"
 
-    uint8 first_byte "First Byte"
+    uint8 first_byte "First Byte" defaults(0)
     bits first_byte header_form 7 1 "Header Form"
     bits first_byte fixed_bit 6 1 "Fixed Bit"
     bits first_byte long_packet_type 4 2 "Long Packet Type"
@@ -53,16 +53,16 @@ Object<QUIC> QUIC_LONG
         3 = Retry
     bits first_byte type_specific_bits 0 4 "Type Specific Bits"
 
-    uint32 version hex "Version"
+    uint32 version hex "Version" defaults(0x00000001)
         0x00000000 = Version Negotiation
         0x00000001 = QUIC v1
         0x6b3343cf = QUIC v2
         0x51303434 = Google QUIC Q044
         0x51303530 = Google QUIC Q050
 
-    uint8 dcil "Destination Connection ID Length"
+    uint8 dcil "Destination Connection ID Length" defaults(8)
     bytes[dcil] dcid "Destination Connection ID"
-    uint8 scil "Source Connection ID Length"
+    uint8 scil "Source Connection ID Length" defaults(0)
     bytes[scil] scid "Source Connection ID"
 
     # Remaining bytes hold type-specific varint-encoded fields:
@@ -88,7 +88,7 @@ Object<QUIC> QUIC_SHORT
            "\x60" "\x61" "\x62" "\x63"
            "\x64" "\x65" "\x66" "\x67"
 
-    uint8 first_byte "First Byte"
+    uint8 first_byte "First Byte" defaults(0)
     bits first_byte header_form 7 1 "Header Form"
     bits first_byte fixed_bit 6 1 "Fixed Bit"
     bits first_byte spin_bit 5 1 "Spin Bit"

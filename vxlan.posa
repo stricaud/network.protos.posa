@@ -22,11 +22,11 @@ Object<main> VXLAN
     abbrev "vxlan"
     col "VXLAN"
 
-    uint8  flags    hex "Flags"
+    uint8  flags    hex "Flags" defaults(0x08)
         0x08 = "VNI Valid (I-flag set)"
-    uint24 reserved hex "Reserved"
-    uint24 vni      "VNI (VXLAN Network Identifier)"
-    uint8  reserved2 "Reserved2"
+    uint24 reserved hex "Reserved" defaults(0)
+    uint24 vni "VNI (VXLAN Network Identifier)" defaults(0)
+    uint8  reserved2 "Reserved2" defaults(0)
     payload inner_frame "Inner Ethernet Frame"
 
     info "VXLAN VNI=%u" vni

@@ -26,7 +26,7 @@ Object<main> REDIS
 
     # One ASCII byte selects the message type.  Enum labels appear in the
     # Type column and in the %s expansion of the info line below.
-    uint8 type_byte "Type"
+    uint8 type_byte "Type" defaults(0x2A)
         0x2B = Simple String
         0x2D = Error
         0x3A = Integer

@@ -36,12 +36,12 @@ Object<SSDP> SSDP_RESPONSE
     # The group dispatcher reads the first four bytes to distinguish a response
     # ("HTTP") from the request types above.  0x48545450 = big-endian "HTTP".
     # seek 0 rewinds so the full status line is re-read as human-readable text.
-    uint32 magic = 0x48545450 hex "Magic"
+    uint32 magic hex "Magic" defaults(0x48545450)
     seek 0
 
-    string version     until " "    "Version"
-    string status_code until " "    "Status-Code"
-    string reason      until "\r\n" "Reason-Phrase"
+    string version     until " " "Version" defaults("HTTP/1.1")
+    string status_code until " " "Status-Code" defaults("200")
+    string reason      until "\r\n" "Reason-Phrase" defaults("OK")
 
     kvblock headers "Headers"
 
@@ -62,9 +62,9 @@ Object<SSDP> SSDP_SEARCH
     # or a URI path of an unrelated protocol.
     starts "M-SEARCH "
 
-    string method         until " "    "Method"
-    string request_target until " "    "Request-Target"
-    string version        until "\r\n" "Version"
+    string method         until " " "Method" defaults("M-SEARCH")
+    string request_target until " " "Request-Target" defaults("*")
+    string version        until "\r\n" "Version" defaults("HTTP/1.1")
 
     kvblock headers "Headers"
 
@@ -86,9 +86,9 @@ Object<SSDP> SSDP_NOTIFY
     # or any other mid-stream text that happens to start with the word.
     starts "NOTIFY "
 
-    string method         until " "    "Method"
-    string request_target until " "    "Request-Target"
-    string version        until "\r\n" "Version"
+    string method         until " " "Method" defaults("NOTIFY")
+    string request_target until " " "Request-Target" defaults("*")
+    string version        until "\r\n" "Version" defaults("HTTP/1.1")
 
     kvblock headers "Headers"
 

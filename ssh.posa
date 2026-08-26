@@ -4,16 +4,16 @@ Object<main> SSH
     abbrev "ssh"
     col "SSH"
     seek 4
-    string version until "-"     ["Protocol Version"]
-    string software until "\r\n" ["Software Version"]
+    string version until "-" ["Protocol Version"] defaults("SSH")
+    string software until "\r\n" ["Software Version"] defaults("2.0-OpenSSH_9.6")
     info "%s %s" version, software
 
 Object SSH_Packet
     abbrev "ssh.pkt"
     col "SSH"
-    uint32 packet_length   ["Packet Length"]
-    uint8  padding_length  ["Padding Length"]
-    uint8  msg_type        ["Message Type"]
+    uint32 packet_length ["Packet Length"] defaults(0)
+    uint8  padding_length ["Padding Length"] defaults(0)
+    uint8  msg_type ["Message Type"] defaults(20)
         DISCONNECT           = 1
         IGNORE               = 2
         UNIMPLEMENTED        = 3

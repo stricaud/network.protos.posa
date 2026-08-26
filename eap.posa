@@ -2,12 +2,12 @@
 # Carried over RADIUS (attribute 79), 802.1X (EtherType 0x888E), or PPP.
 # SUCCESS and FAILURE have no data field (length=4).
 Object<main> EAP
-    uint8  code = 1
+    uint8  code defaults(1)
         REQUEST  = 1
         RESPONSE = 2
         SUCCESS  = 3
         FAILURE  = 4
         INITIATE = 5
         FINISH   = 6
-    uint8  identifier = 0
-    uint16 length = 4
+    uint8  identifier defaults(0)
+    uint16 length defaults(4)

@@ -84,9 +84,9 @@ Object<main> Diameter
     abbrev "diameter"
     col "Diameter"
 
-    uint8  version "Version"
-    uint24 message_length "Message Length"
-    uint8  flags "Flags"
+    uint8  version "Version" defaults(1)
+    uint24 message_length "Message Length" defaults(20)
+    uint8  flags "Flags" defaults(0x80)
 
     bits flags req        7 1 "Request"
         Answer  = 0
@@ -95,10 +95,10 @@ Object<main> Diameter
     bits flags error      5 1 "Error"
     bits flags retransmit 4 1 "Potentially Re-transmitted Message"
 
-    uint24 command_code lookup DiameterCommandCodes "Command Code"
-    uint32 application_id lookup DiameterApplicationIds "Application-ID"
-    uint32 hop_by_hop_id  hex "Hop-by-Hop Identifier"
-    uint32 end_to_end_id  hex "End-to-End Identifier"
+    uint24 command_code lookup DiameterCommandCodes "Command Code" defaults(257)
+    uint32 application_id lookup DiameterApplicationIds "Application-ID" defaults(0)
+    uint32 hop_by_hop_id  hex "Hop-by-Hop Identifier" defaults(0)
+    uint32 end_to_end_id  hex "End-to-End Identifier" defaults(0)
 
     payload avps "AVPs"
 

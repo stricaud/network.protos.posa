@@ -5,44 +5,44 @@
 protocol TPKT
     col "RDP"
     abbrev "rdp"
-    uint8  version
-    uint8  reserved
-    uint16 length
+    uint8  version defaults(3)
+    uint8  reserved defaults(0)
+    uint16 length defaults(19)
     layer   cotp    COTP
 
 protocol COTP
     abbrev "cotp"
-    uint8  li
-    uint8  pdu_type
+    uint8  li defaults(6)
+    uint8  pdu_type defaults(0xe0)
         CR = 0xe0
         CC = 0xd0
         DT = 0xf0
     scope   li
         when pdu_type & 0xf0 == 0xe0:
-            uint16 dst_ref
-            uint16 src_ref
-            uint8  class
+            uint16 dst_ref defaults(0)
+            uint16 src_ref defaults(0)
+            uint8  class defaults(0)
             layer neg RDP_NEGOTIATION
         when pdu_type & 0xf0 == 0xd0:
-            uint16 dst_ref
-            uint16 src_ref
-            uint8  class
+            uint16 dst_ref defaults(0)
+            uint16 src_ref defaults(0)
+            uint8  class defaults(0)
             layer neg RDP_NEGOTIATION
         when pdu_type & 0xf0 == 0xf0:
-            uint8  eot
+            uint8  eot defaults(0x80)
     info "COTP %s" pdu_type
 
 protocol RDP_NEGOTIATION
     abbrev "rdp"
     optional string cookie until "\r\n"
     when remaining >= 8:
-        uint8 type
+        uint8 type defaults(1)
             Request  = 1
             Response = 2
             Failure  = 3
-        uint8     flags
-        le_uint16 length
-        le_uint32 protocols
+        uint8     flags defaults(0)
+        le_uint16 length defaults(19)
+        le_uint32 protocols defaults(0x1)
             TLS     = 0x1
             CredSSP = 0x3
     info "%s Negotiate %s" cookie, type

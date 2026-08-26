@@ -6,8 +6,8 @@
 # Defined first because the frame loop below `include`s it: include resolves in
 # a single forward pass, so the object has to already exist at that point.
 Object HTTP2Frame
-    uint24 length "Frame Length"
-    uint8 type "Frame Type"
+    uint24 length "Frame Length" defaults(0)
+    uint8 type "Frame Type" defaults(4)
         DATA          = 0
         HEADERS       = 1
         PRIORITY      = 2
@@ -18,12 +18,12 @@ Object HTTP2Frame
         GOAWAY        = 7
         WINDOW_UPDATE = 8
         CONTINUATION  = 9
-    uint8 flags "Flags"
+    uint8 flags "Flags" defaults(0)
     bits flags end_stream   0 1 "End Stream / ACK"
     bits flags end_headers  2 1 "End Headers"
     bits flags padded       3 1 "Padded"
     bits flags priority_bit 5 1 "Priority"
-    uint32 stream_id "Stream Identifier"
+    uint32 stream_id "Stream Identifier" defaults(0)
     bytes[length] payload "Payload"
 
 # ── The connection ───────────────────────────────────────────────────────────
@@ -32,7 +32,7 @@ Object<main> HTTP2
     abbrev "http2"
     col "HTTP2"
 
-    bytes<24> preface "Connection Preface"
+    bytes<24> preface "Connection Preface" defaults("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n")
 
     repeat until end as frame "Frame"
         include HTTP2Frame

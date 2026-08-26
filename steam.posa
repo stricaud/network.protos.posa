@@ -29,14 +29,14 @@ Object<STEAM> STEAM_IHS_DISCOVERY
     abbrev "steam"
     col "Steam"
 
-    bytes<4> magic1 hex "Magic1 (0xFFFFFFFF)"
-    bytes<4> magic2 hex "Magic2 (0xA05F4C21)"
-    le_uint32 message_type "Message Type"
+    bytes<4> magic1 hex "Magic1 (0xFFFFFFFF)" defaults("\xff\xff\xff\xff")
+    bytes<4> magic2 hex "Magic2 (0xA05F4C21)" defaults("\xa0\x5f\x4c\x21")
+    le_uint32 message_type "Message Type" defaults(1)
         1 = "Discovery Request"
         2 = "Discovery Response"
         3 = "Streaming Request"
         4 = "Streaming Response"
-    le_uint32 payload_length "Payload Length"
+    le_uint32 payload_length "Payload Length" defaults(0)
     bytes[payload_length] body "Protobuf Payload"
 
     info "Steam IHS type=%u len=%u" message_type, payload_length
@@ -46,8 +46,8 @@ Object<STEAM> STEAM_CM
     abbrev "steam"
     col "Steam"
 
-    le_uint32 payload_length "Payload Length"
-    le_uint32 magic hex "Magic"
+    le_uint32 payload_length "Payload Length" defaults(0)
+    le_uint32 magic hex "Magic" defaults(0x31305456)
         0x31305456 = "VT01 (Steam CM)"
         0x564E4F51 = "QNOV (GC)"
     bytes[payload_length] body "Protobuf Payload"

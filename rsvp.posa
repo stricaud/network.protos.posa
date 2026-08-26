@@ -2,8 +2,8 @@
 # IP protocol 46. version_flags: Ver(4)=1 | Flags(4). Objects follow the header.
 # send_ttl copies the IP TTL so intermediate nodes can detect routing loops.
 Object<main> RSVP
-    uint8  version_flags = 0x10
-    uint8  msg_type = 1
+    uint8  version_flags defaults(0x10)
+    uint8  msg_type defaults(1)
         PATH      = 1
         RESV      = 2
         PATHERR   = 3
@@ -15,7 +15,7 @@ Object<main> RSVP
         ACK       = 13
         SREFRESH  = 15
         HELLO     = 20
-    uint16 checksum = 0
-    uint8  send_ttl = 64
-    uint8  reserved = 0
-    uint16 rsvp_length = 0
+    uint16 checksum defaults(0)
+    uint8  send_ttl defaults(64)
+    uint8  reserved defaults(0)
+    uint16 rsvp_length defaults(0)

@@ -4,13 +4,13 @@
 Object<main> IKEv2
     bytes<8> initiator_spi
     bytes<8> responder_spi
-    uint8    next_payload = 0
-    uint8    version = 0x20
-    uint8    exchange_type = 34
+    uint8    next_payload defaults(0)
+    uint8    version defaults(0x20)
+    uint8    exchange_type defaults(34)
         IKE_SA_INIT     = 34
         IKE_AUTH        = 35
         CREATE_CHILD_SA = 36
         INFORMATIONAL   = 37
-    uint8    flags = 0x08
-    uint32   message_id = 0
-    uint32   length = 28
+    uint8    flags defaults(0x08)
+    uint32   message_id defaults(0)
+    uint32   length defaults(28)

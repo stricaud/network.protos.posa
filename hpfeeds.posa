@@ -23,8 +23,8 @@ Object<main> HPFeeds
     abbrev "hpfeeds"
     col "hpfeeds"
 
-    uint32 msglen "Message Length"
-    uint8 opcode "Opcode"
+    uint32 msglen "Message Length" defaults(5)
+    uint8 opcode "Opcode" defaults(1)
         0 = "Error"
         1 = "Info"
         2 = "Auth"
@@ -37,13 +37,13 @@ Object<main> HPFeeds
 
     # ── Info: broker greeting — its name and the auth challenge ───────────────
     when opcode == 1:
-        uint8 server_len "Server length"
+        uint8 server_len "Server length" defaults(0)
         str[server_len] server "Server"
         payload nonce "Nonce"
 
     # ── Auth: client identity and sha1(nonce + authkey) ───────────────────────
     when opcode == 2:
-        uint8 ident_len "Ident length"
+        uint8 ident_len "Ident length" defaults(0)
         str[ident_len] ident "Ident"
         payload secret "Secret"
 
@@ -51,15 +51,15 @@ Object<main> HPFeeds
     # This is the bulk of a live feed; the payload is whatever the honeypot
     # decided to ship — often JSON, sometimes a raw binary sample.
     when opcode == 3:
-        uint8 ident_len "Ident length"
+        uint8 ident_len "Ident length" defaults(0)
         str[ident_len] ident "Ident"
-        uint8 channel_len "Channel length"
+        uint8 channel_len "Channel length" defaults(0)
         str[channel_len] channel "Channel"
         payload data "Payload"
 
     # ── Subscribe: identity, then the channel being joined ────────────────────
     when opcode == 4:
-        uint8 ident_len "Ident length"
+        uint8 ident_len "Ident length" defaults(0)
         str[ident_len] ident "Ident"
         payload channel "Channel"
 

@@ -51,10 +51,16 @@ weak rule tcp.content "\x88" => WebSocket
 weak rule tcp.content "\x89" => WebSocket
 weak rule tcp.content "\x8A" => WebSocket
 
-# ── Port bindings (SECONDARY — standard and common WebSocket ports) ──────────
-rule tcp.port == 80   => WebSocket
-rule tcp.port == 443  => WebSocket
-rule tcp.port == 8080 => WebSocket
+# ── No port bindings, deliberately ───────────────────────────────────────────
+# WebSocket has no port of its own. It begins life as an HTTP request carrying
+# `Upgrade: websocket`, and only then do frames start flowing — over whatever
+# port that HTTP connection was already using, which is 80 or 443 almost every
+# time. Claiming those ports here would take them from HTTP and TLS, and a port
+# binding outranks the weak signatures above: a TLS ClientHello on 443 would be
+# decoded as a WebSocket frame (0x16 reads as a valid opcode) and its SNI would
+# never be seen. The signatures are what recognise WebSocket, and they are asked
+# after the port bindings, which is the right way round for a protocol that
+# borrows someone else's port.
 
 # ── Coloring rules ───────────────────────────────────────────────────────────
 # Text frames — green

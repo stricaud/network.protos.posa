@@ -79,132 +79,136 @@ Object<main> MQTT
 
     # All variable-header and payload fields are bounded to remaining_length bytes.
     scope remaining_length
+        # Everything below is inside the scope, not after it. A structural
+        # line at the same indent as `scope` closes it, and closing a scope
+        # skips to its end — so at indent 4 these `when` blocks would each
+        # run with the packet already consumed and decode nothing at all.
 
-    # ── CONNECT ───────────────────────────────────────────────────────────────
-    # Mandatory first packet from the client to the broker.  The variable header
-    # carries the protocol name (UTF-8 length-prefixed string), version byte,
-    # connect flags, and keepalive interval.  The payload begins with the
-    # mandatory UTF-8 Client ID; Will topic/message, username, and password
-    # follow conditionally on the connect_flags bits (not decoded here).
-    when msg_type == 1:
-        uint16 proto_name_len "Protocol Name Length" defaults(4)
-        str[proto_name_len] proto_name "Protocol Name" defaults("MQTT")
-        uint8 protocol_level "Protocol Level" defaults(4)
-            MQTT 3.1   = 3
-            MQTT 3.1.1 = 4
-            MQTT 5.0   = 5
-        uint8 connect_flags "Connect Flags" defaults(0x02)
-        bits connect_flags username_flag 7 1 "User Name Flag"
-        bits connect_flags password_flag 6 1 "Password Flag"
-        bits connect_flags will_retain   5 1 "Will RETAIN"
-        bits connect_flags will_qos      3 2 "Will QoS"
-        bits connect_flags will_flag     2 1 "Will Flag"
-        bits connect_flags clean_session 1 1 "Clean Session"
-        uint16 keep_alive "Keep Alive (seconds)" defaults(60)
-        # Payload — Client ID is mandatory; conditional fields are not decoded here
-        uint16 client_id_len "Client ID Length" defaults(0)
-        str[client_id_len] client_id "Client ID"
+        # ── CONNECT ───────────────────────────────────────────────────────────────
+        # Mandatory first packet from the client to the broker.  The variable header
+        # carries the protocol name (UTF-8 length-prefixed string), version byte,
+        # connect flags, and keepalive interval.  The payload begins with the
+        # mandatory UTF-8 Client ID; Will topic/message, username, and password
+        # follow conditionally on the connect_flags bits (not decoded here).
+        when msg_type == 1:
+            uint16 proto_name_len "Protocol Name Length" defaults(4)
+            str[proto_name_len] proto_name "Protocol Name" defaults("MQTT")
+            uint8 protocol_level "Protocol Level" defaults(4)
+                MQTT 3.1   = 3
+                MQTT 3.1.1 = 4
+                MQTT 5.0   = 5
+            uint8 connect_flags "Connect Flags" defaults(0x02)
+            bits connect_flags username_flag 7 1 "User Name Flag"
+            bits connect_flags password_flag 6 1 "Password Flag"
+            bits connect_flags will_retain   5 1 "Will RETAIN"
+            bits connect_flags will_qos      3 2 "Will QoS"
+            bits connect_flags will_flag     2 1 "Will Flag"
+            bits connect_flags clean_session 1 1 "Clean Session"
+            uint16 keep_alive "Keep Alive (seconds)" defaults(60)
+            # Payload — Client ID is mandatory; conditional fields are not decoded here
+            uint16 client_id_len "Client ID Length" defaults(0)
+            str[client_id_len] client_id "Client ID"
 
-    # ── CONNACK ───────────────────────────────────────────────────────────────
-    # Broker's response to CONNECT.  A non-zero return code means the broker
-    # refused the connection; the spec requires the TCP session to be closed
-    # by the broker after sending a non-zero CONNACK.
-    when msg_type == 2:
-        uint8 connack_flags "Connect Acknowledge Flags" defaults(0)
-        bits connack_flags session_present 0 1 "Session Present"
-        uint8 return_code "Connect Return Code" defaults(0)
-            Accepted              = 0
-            Unacceptable Protocol = 1
-            Identifier Rejected   = 2
-            Server Unavailable    = 3
-            Bad Credentials       = 4
-            Not Authorized        = 5
+        # ── CONNACK ───────────────────────────────────────────────────────────────
+        # Broker's response to CONNECT.  A non-zero return code means the broker
+        # refused the connection; the spec requires the TCP session to be closed
+        # by the broker after sending a non-zero CONNACK.
+        when msg_type == 2:
+            uint8 connack_flags "Connect Acknowledge Flags" defaults(0)
+            bits connack_flags session_present 0 1 "Session Present"
+            uint8 return_code "Connect Return Code" defaults(0)
+                Accepted              = 0
+                Unacceptable Protocol = 1
+                Identifier Rejected   = 2
+                Server Unavailable    = 3
+                Bad Credentials       = 4
+                Not Authorized        = 5
 
-    # ── PUBLISH ───────────────────────────────────────────────────────────────
-    # Carries one application message between client and broker (bidirectional).
-    # The Topic Name is always present.  QoS > 0 messages include a Packet
-    # Identifier in the variable header to correlate acknowledgements.
-    when msg_type == 3:
-        uint16 topic_len "Topic Name Length" defaults(0)
-        str[topic_len] topic "Topic Name"
-        when qos == 1:
+        # ── PUBLISH ───────────────────────────────────────────────────────────────
+        # Carries one application message between client and broker (bidirectional).
+        # The Topic Name is always present.  QoS > 0 messages include a Packet
+        # Identifier in the variable header to correlate acknowledgements.
+        when msg_type == 3:
+            uint16 topic_len "Topic Name Length" defaults(0)
+            str[topic_len] topic "Topic Name"
+            when qos == 1:
+                uint16 packet_id "Packet Identifier" defaults(1)
+            when qos == 2:
+                uint16 packet_id "Packet Identifier" defaults(1)
+            payload message_data "Message Payload"
+
+        # ── QoS acknowledgement flow ──────────────────────────────────────────────
+        # PUBACK  (4): QoS 1 — broker or client confirms delivery
+        # PUBREC  (5): QoS 2 phase 1 — receiver confirms receipt
+        # PUBREL  (6): QoS 2 phase 2 — sender releases the message
+        # PUBCOMP (7): QoS 2 phase 3 — receiver confirms completion
+        when msg_type == 4:
             uint16 packet_id "Packet Identifier" defaults(1)
-        when qos == 2:
+
+        when msg_type == 5:
             uint16 packet_id "Packet Identifier" defaults(1)
-        payload message_data "Message Payload"
 
-    # ── QoS acknowledgement flow ──────────────────────────────────────────────
-    # PUBACK  (4): QoS 1 — broker or client confirms delivery
-    # PUBREC  (5): QoS 2 phase 1 — receiver confirms receipt
-    # PUBREL  (6): QoS 2 phase 2 — sender releases the message
-    # PUBCOMP (7): QoS 2 phase 3 — receiver confirms completion
-    when msg_type == 4:
-        uint16 packet_id "Packet Identifier" defaults(1)
+        when msg_type == 6:
+            uint16 packet_id "Packet Identifier" defaults(1)
 
-    when msg_type == 5:
-        uint16 packet_id "Packet Identifier" defaults(1)
+        when msg_type == 7:
+            uint16 packet_id "Packet Identifier" defaults(1)
 
-    when msg_type == 6:
-        uint16 packet_id "Packet Identifier" defaults(1)
+        # ── SUBSCRIBE ─────────────────────────────────────────────────────────────
+        # Client requests one or more topic filter subscriptions.  The reserved
+        # bits in the fixed header are defined as 0b0010 by the specification,
+        # making the first byte always 0x82 — a reliable content-detection anchor.
+        when msg_type == 8:
+            uint16 packet_id "Packet Identifier" defaults(1)
+            repeat until end as topic_filter "Topic Filter List"
+                uint16 filter_len "Topic Filter Length" defaults(0)
+                str[filter_len] filter_topic "Topic Filter"
+                uint8 requested_qos "Requested QoS" defaults(0)
+                    QoS 0 = 0
+                    QoS 1 = 1
+                    QoS 2 = 2
 
-    when msg_type == 7:
-        uint16 packet_id "Packet Identifier" defaults(1)
+        # ── SUBACK ────────────────────────────────────────────────────────────────
+        # Broker acknowledges a SUBSCRIBE, one return code per requested topic filter.
+        # 0x80 (128) means the broker refused that particular filter.
+        when msg_type == 9:
+            uint16 packet_id "Packet Identifier" defaults(1)
+            repeat until end as granted_qos "Granted QoS List"
+                uint8 sub_return_code "Return Code" defaults(0)
+                    Granted QoS 0 = 0
+                    Granted QoS 1 = 1
+                    Granted QoS 2 = 2
+                    Failure       = 128
 
-    # ── SUBSCRIBE ─────────────────────────────────────────────────────────────
-    # Client requests one or more topic filter subscriptions.  The reserved
-    # bits in the fixed header are defined as 0b0010 by the specification,
-    # making the first byte always 0x82 — a reliable content-detection anchor.
-    when msg_type == 8:
-        uint16 packet_id "Packet Identifier" defaults(1)
-        repeat until end as topic_filter "Topic Filter List"
-            uint16 filter_len "Topic Filter Length" defaults(0)
-            str[filter_len] filter_topic "Topic Filter"
-            uint8 requested_qos "Requested QoS" defaults(0)
-                QoS 0 = 0
-                QoS 1 = 1
-                QoS 2 = 2
+        # ── UNSUBSCRIBE ───────────────────────────────────────────────────────────
+        # Client removes one or more topic filter subscriptions.  Reserved bits
+        # are 0b0010 (same as SUBSCRIBE), making the first byte always 0xA2.
+        when msg_type == 10:
+            uint16 packet_id "Packet Identifier" defaults(1)
+            repeat until end as unsub_filter "Topic Filter List"
+                uint16 unsub_len "Topic Filter Length" defaults(0)
+                str[unsub_len] unsub_topic "Topic Filter"
 
-    # ── SUBACK ────────────────────────────────────────────────────────────────
-    # Broker acknowledges a SUBSCRIBE, one return code per requested topic filter.
-    # 0x80 (128) means the broker refused that particular filter.
-    when msg_type == 9:
-        uint16 packet_id "Packet Identifier" defaults(1)
-        repeat until end as granted_qos "Granted QoS List"
-            uint8 sub_return_code "Return Code" defaults(0)
-                Granted QoS 0 = 0
-                Granted QoS 1 = 1
-                Granted QoS 2 = 2
-                Failure       = 128
+        # ── UNSUBACK ──────────────────────────────────────────────────────────────
+        when msg_type == 11:
+            uint16 packet_id "Packet Identifier" defaults(1)
 
-    # ── UNSUBSCRIBE ───────────────────────────────────────────────────────────
-    # Client removes one or more topic filter subscriptions.  Reserved bits
-    # are 0b0010 (same as SUBSCRIBE), making the first byte always 0xA2.
-    when msg_type == 10:
-        uint16 packet_id "Packet Identifier" defaults(1)
-        repeat until end as unsub_filter "Topic Filter List"
-            uint16 unsub_len "Topic Filter Length" defaults(0)
-            str[unsub_len] unsub_topic "Topic Filter"
+        # PINGREQ  (12): no variable header or payload; exactly 2 bytes: 0xC0 0x00
+        # PINGRESP (13): no variable header or payload; exactly 2 bytes: 0xD0 0x00
+        # DISCONNECT (14): no variable header or payload in MQTT 3.x
+        #                  (MQTT 5.0 adds a reason code and properties — not decoded here)
 
-    # ── UNSUBACK ──────────────────────────────────────────────────────────────
-    when msg_type == 11:
-        uint16 packet_id "Packet Identifier" defaults(1)
+        else:
+            payload msg_body "Message Body"
 
-    # PINGREQ  (12): no variable header or payload; exactly 2 bytes: 0xC0 0x00
-    # PINGRESP (13): no variable header or payload; exactly 2 bytes: 0xD0 0x00
-    # DISCONNECT (14): no variable header or payload in MQTT 3.x
-    #                  (MQTT 5.0 adds a reason code and properties — not decoded here)
-
-    else:
-        payload msg_body "Message Body"
-
-    info "%s %s%s" msg_type, topic, client_id
+        info "%s %s%s" msg_type, topic, client_id
 
 
-# ── Content Detection Rules (primary — port-independent) ──────────────────────
-#
-# CONNECT (0x10): mandatory first byte of every new MQTT TCP session.
-# The type=1 / flags=0 combination is unique to MQTT CONNECT; no other protocol
-# uses this byte as its first octet in the same context.
+    # ── Content Detection Rules (primary — port-independent) ──────────────────────
+    #
+    # CONNECT (0x10): mandatory first byte of every new MQTT TCP session.
+    # The type=1 / flags=0 combination is unique to MQTT CONNECT; no other protocol
+    # uses this byte as its first octet in the same context.
 weak rule tcp.content "\x10" => MQTT
 
 # CONNACK (0x20): broker's mandatory first reply; covers the server→client
